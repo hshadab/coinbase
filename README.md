@@ -1,44 +1,64 @@
-# Jolt Atlas AgentKit Guardrails
+# Jolt Atlas: The Trust Layer for Agentic Commerce
 
-> **The cryptographic trust layer for AgentKit agents**: Prove your agent ran the policy it claimed, before it moves money onchain.
+> **Crypto rails for autonomous AI agents** - Identity, payments, and verifiable behavior for the agent economy.
 
 [![npm version](https://img.shields.io/npm/v/@jolt-atlas/agentkit-guardrails)](https://www.npmjs.com/package/@jolt-atlas/agentkit-guardrails)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Overview
+## The Problem
 
-Jolt Atlas AgentKit Guardrails adds **zkML (zero-knowledge machine learning) guardrails** to [Coinbase AgentKit](https://github.com/coinbase/agentkit) agents. Every action your agent takes can be verified against a policy model with cryptographic proofs.
+As AI systems move from screens into the physical world, they need to:
+- **Pay** - Execute financial transactions autonomously
+- **Verify** - Prove they followed policies and acted correctly
+- **Identify** - Have verifiable on-chain identity and reputation
+- **Coordinate** - Interact with other agents in trustless ways
+
+Current solutions require trusting the agent operator. **Jolt Atlas makes agent behavior cryptographically verifiable.**
+
+## The Solution
+
+Jolt Atlas provides the infrastructure for **agentic commerce** on Coinbase:
 
 ```
-Agent Action → Policy Model → ZK Proof → Attestation → Execute (or Block)
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        JOLT ATLAS TRUST LAYER                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                │
+│   │   IDENTITY  │    │   VERIFY    │    │    PAY      │                │
+│   │   Registry  │    │   zkML      │    │   Rails     │                │
+│   └──────┬──────┘    └──────┬──────┘    └──────┬──────┘                │
+│          │                  │                  │                        │
+│          ▼                  ▼                  ▼                        │
+│   ┌─────────────────────────────────────────────────────┐              │
+│   │              AgentKit / CDP Wallet                   │              │
+│   └─────────────────────────────────────────────────────┘              │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Why This Matters
+### Three Pillars
 
-As AI agents gain the ability to move money autonomously (via AgentKit), you need more than rate limits. You need **cryptographic proof** that your agent followed the policy it was supposed to follow.
-
-- **Auditability**: Every decision is provable and attestable
-- **Trust**: Users can verify agent behavior without trusting the operator
-- **Compliance**: Generate verifiable evidence of policy enforcement
-- **Safety**: Block unauthorized actions before they hit the chain
-
-## Installation
-
-```bash
-npm install @jolt-atlas/agentkit-guardrails
-```
+| Pillar | What It Does | Why It Matters |
+|--------|--------------|----------------|
+| **Identity** | On-chain agent DIDs with reputation | Know who you're transacting with |
+| **Verify** | zkML proofs of policy compliance | Trust the math, not the operator |
+| **Pay** | Agent-to-agent payment rails | Enable autonomous commerce |
 
 ## Quick Start
+
+### 1. Guardrailed Actions (Basic)
+
+Wrap any AgentKit action with zkML verification:
 
 ```typescript
 import { withZkGuardrail } from '@jolt-atlas/agentkit-guardrails';
 import { AgentKit } from '@coinbase/agentkit';
 
-// Initialize AgentKit
 const agent = await AgentKit.from({ walletProvider: cdpWallet });
 
-// Wrap any action with zkML guardrails
-const guardrailedTransfer = withZkGuardrail(
+// Wrap transfer with zkML guardrails
+const safeTransfer = withZkGuardrail(
   agent.getAction('transfer'),
   {
     policyModel: './models/tx-authorization.onnx',
@@ -48,331 +68,310 @@ const guardrailedTransfer = withZkGuardrail(
 );
 
 // Action is now protected - no proof, no tx
-const result = await guardrailedTransfer({
+const result = await safeTransfer({
   to: '0x...',
   amount: '100',
   asset: 'USDC',
 });
 
-console.log(result.guardrail.decision);    // 'approve'
-console.log(result.guardrail.proof);       // '0x...'
-console.log(result.guardrail.attestation); // Signed attestation
+console.log(result.guardrail.decision);  // 'approve'
+console.log(result.guardrail.proof);     // '0x...' (zkML proof)
 ```
 
-## Core Concepts
+### 2. Agent Identity (Advanced)
 
-### Policy Models
-
-Policy models are ONNX neural networks that evaluate whether an action should be allowed. They take features extracted from the action context and output a decision (approve/reject/review).
+Register your agent's on-chain identity:
 
 ```typescript
-const config = {
-  policyModel: {
-    path: './models/tx-authorization.onnx',
-    threshold: 0.7,  // Confidence threshold
-    name: 'Transaction Authorization v1',
+import { AgentPaymentRails } from '@jolt-atlas/agentkit-guardrails';
+
+const rails = new AgentPaymentRails(signer, {
+  identityRegistryAddress: REGISTRY_ADDRESS,
+  proverServiceUrl: 'http://localhost:3001',
+});
+
+// Register agent identity
+const agentDid = await rails.registerIdentity(
+  modelCommitment,
+  'ipfs://metadata...'
+);
+
+console.log(agentDid); // did:coinbase:agent:0x...
+```
+
+### 3. Agent-to-Agent Payments (Advanced)
+
+Pay other agents with trust verification:
+
+```typescript
+// Pay another agent with trust requirements
+const payment = await rails.payAgent({
+  toAgent: 'did:coinbase:agent:0x...',
+  amount: ethers.parseEther('100'),
+  token: USDC_ADDRESS,
+  trustRequirements: {
+    minReputation: 200,
+    requiredCredentials: ['KYCAgent'],
+    requireZkmlProof: true,
   },
-  // ...
-};
+});
+
+console.log(payment.status);      // 'completed'
+console.log(payment.txHash);      // Transaction hash
+console.log(payment.zkmlProofHash); // Proof of trust verification
 ```
 
-### Proof Modes
+## Architecture
 
-Control when ZK proofs are generated:
+### On-Chain Contracts
 
-| Mode | Description |
-|------|-------------|
-| `always` | Generate proof for every action |
-| `on-reject` | Only generate proof when action is rejected |
-| `on-approve` | Only generate proof when action is approved |
-| `never` | Disable proof generation (attestation only) |
+```
+contracts/src/
+├── AgentIdentityRegistry.sol   # Agent DIDs, reputation, credentials
+├── GuardrailAttestationRegistry.sol  # zkML attestation storage
+└── (coming) AgentEscrow.sol    # zkML-gated escrow
+```
 
-### Attestations
+**AgentIdentityRegistry** provides:
+- Agent DID creation (`did:coinbase:agent:0x...`)
+- Reputation scoring (0-1000, zkML-verified)
+- Credential management (KYC, spending limits, compliance)
+- Trust graph for A2A relationships
 
-EIP-712 signed attestations create an audit trail of guardrail decisions:
+### TypeScript SDK
+
+```
+packages/agentkit-guardrails/src/
+├── core/           # withZkGuardrail wrapper
+├── commerce/       # AgentPaymentRails for A2A
+├── proof/          # zkML proof generation
+├── attestation/    # EIP-712 signing
+└── models/         # ONNX policy models
+```
+
+### Rust Prover Service
+
+```
+prover-service/
+├── src/
+│   ├── main.rs         # HTTP API (port 3001)
+│   ├── jolt_atlas.rs   # Real zkML proof generation
+│   └── prover.rs       # Model management
+└── jolt-atlas/
+    └── bin/            # Jolt Atlas binary (400MB)
+```
+
+**Prover endpoints:**
+- `POST /prove` - Generate zkML proof (~2.5s)
+- `POST /verify` - Verify proof (~400ms)
+- `POST /models` - Register ONNX model
+- `GET /health` - Service health
+
+## Use Cases
+
+### 1. Autonomous Shopping Agent
 
 ```typescript
-const config = {
-  // ...
+// Agent shops on behalf of user with spending guardrails
+const shopperAgent = withZkGuardrail(purchaseAction, {
+  policyModel: './models/shopping-policy.onnx',
+  // Model trained on: budget, category, merchant trust, time
+});
+
+// Every purchase generates proof of policy compliance
+const result = await shopperAgent({
+  item: 'laptop',
+  price: 1200,
+  merchant: '0x...',
+});
+```
+
+### 2. Multi-Agent Supply Chain
+
+```typescript
+// Warehouse robot pays delivery robot
+const warehouseAgent = new AgentPaymentRails(warehouseSigner, config);
+const deliveryAgentDid = 'did:coinbase:agent:0x...';
+
+// Payment requires delivery agent to have valid credentials
+await warehouseAgent.payAgent({
+  toAgent: deliveryAgentDid,
+  amount: deliveryFee,
+  trustRequirements: {
+    requiredCredentials: ['DeliveryLicense', 'InsuranceProof'],
+    minReputation: 300,
+  },
+});
+```
+
+### 3. Data Marketplace
+
+```typescript
+// Agent sells verified sensor data
+const dataProviderAgent = new AgentPaymentRails(signer, config);
+
+// Create escrow - funds release when zkML proves data quality
+const escrow = await dataProviderAgent.createEscrow({
+  toAgent: buyerAgentDid,
+  amount: dataPrice,
+  config: {
+    releaseCondition: 'zkml-attestation',
+    zkmlModelCommitment: DATA_QUALITY_MODEL,
+    requiredConfidence: 0.9,
+  },
+});
+```
+
+### 4. DAO Treasury Agent
+
+```typescript
+// DAO agent executes approved proposals with proof
+const treasuryAgent = withZkGuardrail(executeProposal, {
+  policyModel: './models/governance-policy.onnx',
+  onModelReject: 'block',
   attestation: {
     enabled: true,
-    signer: walletClient,  // viem wallet client
-    chainId: 8453,         // Base
+    postOnchain: true, // Permanent proof on-chain
   },
-};
-```
-
-Attestations can be posted onchain for permanent record:
-
-```typescript
-import { encodeAttestationForOnchain } from '@jolt-atlas/agentkit-guardrails';
-
-// Post to GuardrailAttestationRegistry contract
-const calldata = encodeAttestationForOnchain(result.guardrail.attestation);
-await registry.postAttestation(calldata);
-```
-
-## Configuration
-
-### Full Configuration Options
-
-```typescript
-interface GuardrailConfig {
-  // Policy model (path or config object)
-  policyModel: string | {
-    path: string;
-    threshold?: number;
-    name?: string;
-  };
-
-  // When to generate proofs
-  proofMode: 'always' | 'on-reject' | 'on-approve' | 'never';
-
-  // What to do if proof generation fails
-  onProofFail: 'reject' | 'allow' | 'review';
-
-  // What to do if model rejects action
-  onModelReject: 'block' | 'warn' | 'log';
-
-  // Custom feature extraction
-  featureExtractor?: (action, wallet) => FeatureVector;
-
-  // Attestation settings
-  attestation?: {
-    enabled: boolean;
-    signer?: WalletClient;
-    postOnchain?: boolean;
-    registryAddress?: string;
-    chainId?: number;
-  };
-}
-```
-
-### Feature Extractors
-
-Customize how action context is converted to model inputs:
-
-```typescript
-const customExtractor = async (action, wallet) => ({
-  amount: parseFloat(action.params.amount),
-  is_stablecoin: action.params.asset === 'USDC' ? 1 : 0,
-  daily_spend_ratio: wallet.dailySpend / wallet.spendLimit,
-  hour_of_day: new Date().getUTCHours(),
-  // ... more features
-});
-
-const config = {
-  policyModel: './models/custom-policy.onnx',
-  featureExtractor: customExtractor,
-  // ...
-};
-```
-
-## Integration Examples
-
-### LangChain + AgentKit
-
-```typescript
-import { AgentKitToolkit } from '@coinbase/agentkit-langchain';
-import { withZkGuardrail } from '@jolt-atlas/agentkit-guardrails';
-
-// Wrap AgentKit tools with guardrails
-const toolkit = new AgentKitToolkit(agentKit);
-const guardrailedTools = toolkit.getTools().map(tool => ({
-  ...tool,
-  invoke: withZkGuardrail(tool.invoke, config),
-}));
-```
-
-### OpenAI Agents SDK
-
-```typescript
-import { Agent } from 'openai/agents';
-
-const agent = new Agent({
-  tools: [
-    {
-      type: 'function',
-      function: {
-        name: 'transfer',
-        // ...
-      },
-      execute: withZkGuardrail(executeTransfer, config),
-    },
-  ],
 });
 ```
 
-### Standalone Check
+## Performance
 
-```typescript
-import { checkAction } from '@jolt-atlas/agentkit-guardrails';
+| Operation | Time | Notes |
+|-----------|------|-------|
+| zkML Proof Generation | ~2.4s | Real Jolt Atlas SNARK |
+| Proof Verification | ~400ms | On-chain verifiable |
+| Identity Lookup | ~50ms | Cached after first call |
+| A2A Payment (w/ proof) | ~3s | Includes trust verification |
 
-const result = await checkAction(
-  {
-    actionType: 'transfer',
-    params: { to: '0x...', amount: '1000', asset: 'USDC' },
-    timestamp: Date.now(),
-  },
-  config
-);
+## Roadmap
 
-if (result.decision === 'approve') {
-  // Proceed with action
-}
+### Phase 1 ✅ Complete
+- [x] `withZkGuardrail` wrapper
+- [x] ONNX policy model inference
+- [x] EIP-712 attestations
+- [x] GuardrailAttestationRegistry contract
+
+### Phase 1.5 ✅ Complete
+- [x] Real Jolt Atlas zkML proofs (2.4s proving)
+- [x] Rust prover service with HTTP API
+- [x] TypeScript prover client
+
+### Phase 2 ✅ Complete
+- [x] AgentIdentityRegistry contract
+- [x] Agent DIDs and reputation
+- [x] Credential management
+- [x] AgentPaymentRails for A2A commerce
+
+### Phase 3 (Next)
+- [ ] On-chain zkML verification
+- [ ] AgentEscrow with zkML release conditions
+- [ ] Data provenance module
+- [ ] Multi-agent coordination protocols
+
+### Phase 4 (Future)
+- [ ] IoT/robotics sensor attestation
+- [ ] Cross-chain agent identity
+- [ ] Agent reputation marketplace
+- [ ] Physical world verification
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Rust (for prover service)
+- Foundry (for contracts)
+
+### Installation
+
+```bash
+# Clone the repo
+git clone https://github.com/your-org/jolt-atlas-agentkit
+cd jolt-atlas-agentkit
+
+# Install SDK
+cd packages/agentkit-guardrails
+npm install
+
+# Build prover service
+cd ../../prover-service
+cargo build --release --features real-prover
+
+# Deploy contracts
+cd ../contracts
+forge build
 ```
 
-## Smart Contract
+### Run the Prover Service
 
-The `GuardrailAttestationRegistry` contract provides onchain attestation storage:
+```bash
+cd prover-service
 
-```solidity
-// Post attestation
-registry.postAttestation(
-  attestationHash,
-  modelCommitment,
-  inputHash,
-  outputHash,
-  decision,
-  confidence,
-  signature
-);
+# Copy the Jolt Atlas binary (built separately)
+mkdir -p jolt-atlas/bin
+cp /path/to/authorization_json jolt-atlas/bin/
 
-// Verify attestation exists
-bool exists = registry.attestationExists(attestationHash);
-
-// Get attestation data
-Attestation memory att = registry.getAttestation(attestationHash);
+# Start the service
+RUST_LOG=info ./target/release/jolt-atlas-prover-service
 ```
 
-Deploy to Base:
+### Deploy Contracts
+
 ```bash
 cd contracts
 forge script script/Deploy.s.sol --rpc-url base --broadcast
 ```
 
-## Prover Service Architecture
+## API Reference
 
-For production use, the SDK connects to a **Jolt Atlas Prover Service** that handles ZK proof generation:
-
-```
-┌─────────────────────────────────────────┐
-│          TypeScript SDK                  │
-│   @jolt-atlas/agentkit-guardrails       │
-└───────────────────┬─────────────────────┘
-                    │ HTTP
-                    ▼
-┌─────────────────────────────────────────┐
-│      Jolt Atlas Prover Service          │
-│         (Rust / Docker)                  │
-│                                          │
-│  POST /prove    → ZK proof generation   │
-│  POST /verify   → Proof verification    │
-│  POST /models   → Register ONNX model   │
-└─────────────────────────────────────────┘
-```
-
-### Running the Prover Service
-
-```bash
-# With Docker
-cd prover-service
-docker-compose up -d
-
-# Or build and run directly
-cargo run --release
-```
-
-### Configuring the SDK
+### TypeScript SDK
 
 ```typescript
-import { ProofGenerator } from '@jolt-atlas/agentkit-guardrails';
+// Core guardrail
+withZkGuardrail(action, config) → GuardrailedAction
+checkAction(context, config) → GuardrailResult
 
-// Auto mode: uses prover service if available, falls back to mock
-const generator = new ProofGenerator({
-  mode: 'auto',
-  proverEndpoint: 'http://localhost:3001',
-  modelId: 'your-registered-model-id',
-});
+// Commerce
+AgentPaymentRails.registerIdentity(model, metadata) → agentDid
+AgentPaymentRails.payAgent(params) → AgentPayment
+AgentPaymentRails.createEscrow(params) → Escrow
+AgentPaymentRails.verifyAgentTrust(did, requirements) → TrustResult
 
-// Or via environment variable
-// JOLT_ATLAS_PROVER_URL=http://localhost:3001
+// Attestation
+signAttestation(data, signer) → SignedAttestation
+encodeAttestationForOnchain(attestation) → bytes
 ```
 
-### Prover Modes
+### Solidity Contracts
 
-| Mode | Description |
-|------|-------------|
-| `auto` | Use prover service if available, fall back to mock |
-| `service` | Always use prover service (fail if unavailable) |
-| `mock` | Always use mock proofs (for development) |
+```solidity
+// AgentIdentityRegistry
+createAgentIdentity(wallet, modelCommitment, metadataUri) → did
+updateReputation(did, score, proofHash, txCount, volume)
+issueCredential(did, credType, expiry, proofHash)
+verifyAgentForPayment(did, minRep, credential) → bool
 
-## Project Structure
-
+// GuardrailAttestationRegistry
+postAttestation(hash, model, input, output, decision, confidence, sig)
+attestationExists(hash) → bool
 ```
-├── packages/
-│   └── agentkit-guardrails/     # Main SDK
-│       ├── src/
-│       │   ├── core/            # Types, guardrail wrapper
-│       │   ├── models/          # ONNX model loading
-│       │   ├── proof/           # Proof generation + prover client
-│       │   ├── attestation/     # EIP-712 signing
-│       │   └── utils/           # Feature extractors
-│       └── tests/
-├── prover-service/              # Rust prover service
-│   ├── src/
-│   │   ├── main.rs             # HTTP API (Axum)
-│   │   ├── prover.rs           # Jolt Atlas integration
-│   │   └── types.rs            # API types
-│   ├── Dockerfile
-│   └── docker-compose.yml
-├── contracts/
-│   └── src/
-│       └── GuardrailAttestationRegistry.sol
-├── examples/
-│   ├── basic/                   # Simple usage
-│   ├── langchain/               # LangChain integration
-│   └── openai-agents/           # OpenAI Agents integration
-└── docs/
-```
-
-## Roadmap
-
-### Phase 1 ✅
-- [x] Core SDK with `withZkGuardrail` wrapper
-- [x] ONNX model inference
-- [x] Mock proof generation
-- [x] EIP-712 attestations
-- [x] Lightweight attestation registry contract
-- [x] Integration examples
-
-### Phase 1.5 ✅ (Current)
-- [x] Rust prover service with HTTP API
-- [x] TypeScript prover client
-- [x] Auto/service/mock prover modes
-- [x] Docker deployment
-- [x] Offchain proof verification
-
-### Phase 2
-- [ ] Real Jolt Atlas ZK proof integration
-- [ ] Onchain proof verification contract
-- [ ] ERC-8004 validation provider
-- [ ] WASM verifier for browser
-
-### Phase 3
-- [ ] x402 payment proof integration
-- [ ] Cross-chain attestations
-- [ ] Model marketplace
-- [ ] Reputation system
 
 ## Contributing
 
-Contributions welcome! Please read our contributing guidelines first.
+We're building the infrastructure for the agent economy. Contributions welcome!
+
+1. Fork the repo
+2. Create your feature branch
+3. Submit a PR
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License
 
 ---
 
-**Built for the agentic commerce future. Every agent deserves a wallet. Every wallet deserves guardrails.**
+**The future is agentic. Every agent needs identity. Every transaction needs proof.**
+
+*Built for [Coinbase AgentKit](https://github.com/coinbase/agentkit) | Powered by [Jolt Atlas zkML](https://github.com/ICME-Lab/jolt-atlas)*

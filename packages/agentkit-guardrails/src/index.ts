@@ -107,3 +107,18 @@ export {
   transferFeatureExtractor,
   highValueFeatureExtractor,
 } from './utils/feature-extractors.js';
+
+// Commerce exports - Agent-to-Agent Payment Rails
+export {
+  AgentPaymentRails,
+  createPaymentRails,
+  type AgentIdentity,
+  type AgentPayment,
+  type AgentPaymentRequest,
+  type TrustRequirements,
+  type Escrow,
+  type EscrowConfig,
+  AgentStatus,
+  PaymentStatus,
+  EscrowStatus,
+} from './commerce/index.js';
