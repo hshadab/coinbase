@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
+
+import "./interfaces/IIdentityRegistry.sol";
 
 /**
  * @title MemoryRegistry (ERC-8004 Extension)
@@ -372,15 +374,15 @@ contract MemoryRegistry {
      * @notice Check if agent has knowledge in a domain
      * @param agentId The agent's NFT ID
      * @param domain Knowledge domain (hashed)
-     * @return hasKnowledge Whether agent has verified knowledge
+     * @return hasVerifiedKnowledge Whether agent has verified knowledge
      * @return memoryCount Number of memories in domain
      */
     function hasKnowledge(
         uint256 agentId,
         bytes32 domain
-    ) external view returns (bool hasKnowledge, uint256 memoryCount) {
+    ) external view returns (bool hasVerifiedKnowledge, uint256 memoryCount) {
         KnowledgeCredential storage cred = knowledgeCredentials[agentId][domain];
-        hasKnowledge = cred.verifiedAt != 0;
+        hasVerifiedKnowledge = cred.verifiedAt != 0;
         memoryCount = cred.memoryCount;
     }
 
@@ -526,13 +528,4 @@ contract MemoryRegistry {
             return false;
         }
     }
-}
-
-/*//////////////////////////////////////////////////////////////
-                     INTERFACE
-//////////////////////////////////////////////////////////////*/
-
-interface IIdentityRegistry {
-    function ownerOf(uint256 tokenId) external view returns (address);
-    function isApprovedForAll(address owner, address operator) external view returns (bool);
 }

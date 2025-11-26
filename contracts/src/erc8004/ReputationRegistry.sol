@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import "./interfaces/IIdentityRegistry.sol";
 
 /**
  * @title ReputationRegistry (ERC-8004 Compliant)
@@ -298,15 +299,17 @@ contract ReputationRegistry {
         bytes32 tag1,
         bytes32 tag2
     ) external view returns (uint64 count, uint8 averageScore) {
-        address[] memory clientList = clientAddresses.length > 0 ? clientAddresses : _clients[agentId];
-
         uint256 totalScore = 0;
         count = 0;
 
-        for (uint256 i = 0; i < clientList.length; i++) {
-            uint64 lastIdx = _lastIndex[agentId][clientList[i]];
+        // Use provided clientAddresses if any, otherwise use all clients
+        uint256 numClients = clientAddresses.length > 0 ? clientAddresses.length : _clients[agentId].length;
+
+        for (uint256 i = 0; i < numClients; i++) {
+            address client = clientAddresses.length > 0 ? clientAddresses[i] : _clients[agentId][i];
+            uint64 lastIdx = _lastIndex[agentId][client];
             for (uint64 j = 1; j <= lastIdx; j++) {
-                Feedback storage fb = _feedback[agentId][clientList[i]][j];
+                Feedback storage fb = _feedback[agentId][client][j];
                 if (fb.isRevoked) continue;
                 if (tag1 != bytes32(0) && fb.tag1 != tag1) continue;
                 if (tag2 != bytes32(0) && fb.tag2 != tag2) continue;
@@ -448,12 +451,3 @@ contract ReputationRegistry {
     }
 }
 
-/*//////////////////////////////////////////////////////////////
-                     INTERFACE
-//////////////////////////////////////////////////////////////*/
-
-interface IIdentityRegistry {
-    function ownerOf(uint256 tokenId) external view returns (address);
-    function isApprovedForAll(address owner, address operator) external view returns (bool);
-    function getApproved(uint256 tokenId) external view returns (address);
-}
