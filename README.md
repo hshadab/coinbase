@@ -2,8 +2,11 @@
 
 > **Crypto rails for autonomous AI agents** - Identity, payments, and verifiable behavior for the agent economy.
 
+[![ERC-8004](https://img.shields.io/badge/ERC-8004-blue.svg)](https://eips.ethereum.org/EIPS/eip-8004)
 [![npm version](https://img.shields.io/npm/v/@jolt-atlas/agentkit-guardrails)](https://www.npmjs.com/package/@jolt-atlas/agentkit-guardrails)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**First ERC-8004 implementation with zkML extensions** - Built on the [Trustless Agents standard](https://8004.org) with real zero-knowledge machine learning proofs.
 
 ## The Problem
 
@@ -78,65 +81,79 @@ console.log(result.guardrail.decision);  // 'approve'
 console.log(result.guardrail.proof);     // '0x...' (zkML proof)
 ```
 
-### 2. Agent Identity (Advanced)
+### 2. Agent Identity (ERC-8004)
 
-Register your agent's on-chain identity:
+Register your agent as an NFT with zkML model commitment:
 
 ```typescript
 import { AgentPaymentRails } from '@jolt-atlas/agentkit-guardrails';
 
 const rails = new AgentPaymentRails(signer, {
-  identityRegistryAddress: REGISTRY_ADDRESS,
+  identityRegistryAddress: IDENTITY_REGISTRY,
+  reputationRegistryAddress: REPUTATION_REGISTRY,
+  validationRegistryAddress: VALIDATION_REGISTRY,
   proverServiceUrl: 'http://localhost:3001',
 });
 
-// Register agent identity
-const agentDid = await rails.registerIdentity(
+// Register agent identity (mints ERC-721 NFT)
+const agentId = await rails.registerIdentity(
   modelCommitment,
-  'ipfs://metadata...'
+  'ipfs://agent-metadata...'
 );
 
-console.log(agentDid); // did:coinbase:agent:0x...
+console.log(agentId); // 42 (NFT token ID)
 ```
 
-### 3. Agent-to-Agent Payments (Advanced)
+### 3. Agent-to-Agent Payments (ERC-8004)
 
-Pay other agents with trust verification:
+Pay other agents with reputation + zkML trust verification:
 
 ```typescript
-// Pay another agent with trust requirements
+// Pay another agent with ERC-8004 trust requirements
 const payment = await rails.payAgent({
-  toAgent: 'did:coinbase:agent:0x...',
+  toAgentId: 42,  // NFT ID of recipient agent
   amount: ethers.parseEther('100'),
   token: USDC_ADDRESS,
   trustRequirements: {
-    minReputation: 200,
-    requiredCredentials: ['KYCAgent'],
-    requireZkmlProof: true,
+    minReputationScore: 70,      // ReputationRegistry score
+    minReputationCount: 5,       // Minimum feedback count
+    minZkmlApprovalRate: 80,     // ValidationRegistry approval %
+    minZkmlAttestations: 3,      // Minimum attestations
+    requireZkmlProof: true,      // Generate fresh proof
   },
 });
 
-console.log(payment.status);      // 'completed'
-console.log(payment.txHash);      // Transaction hash
-console.log(payment.zkmlProofHash); // Proof of trust verification
+console.log(payment.status);              // 'completed'
+console.log(payment.txHash);              // Transaction hash
+console.log(payment.zkmlAttestationHash); // On-chain attestation
 ```
 
 ## Architecture
 
-### On-Chain Contracts
+### On-Chain Contracts (ERC-8004 Compliant)
 
 ```
 contracts/src/
-├── AgentIdentityRegistry.sol   # Agent DIDs, reputation, credentials
-├── GuardrailAttestationRegistry.sol  # zkML attestation storage
-└── (coming) AgentEscrow.sol    # zkML-gated escrow
+├── erc8004/
+│   ├── IdentityRegistry.sol      # ERC-721 agent NFTs + zkML model commitments
+│   ├── ReputationRegistry.sol    # Feedback scoring (0-100) with authorization
+│   └── ValidationRegistry.sol    # zkML proof attestations + trust scores
+├── GuardrailAttestationRegistry.sol  # Legacy attestation storage
+└── (coming) AgentEscrow.sol      # zkML-gated escrow
 ```
 
-**AgentIdentityRegistry** provides:
-- Agent DID creation (`did:coinbase:agent:0x...`)
-- Reputation scoring (0-1000, zkML-verified)
-- Credential management (KYC, spending limits, compliance)
-- Trust graph for A2A relationships
+**ERC-8004 Three Registry Architecture:**
+
+| Registry | Standard | zkML Extension |
+|----------|----------|----------------|
+| **IdentityRegistry** | ERC-721 NFT per agent | Model commitment tracking |
+| **ReputationRegistry** | Score 0-100 + tags | Feedback aggregation |
+| **ValidationRegistry** | Request/response flow | `postZkmlAttestation()`, `getZkmlTrustScore()` |
+
+The three registries enable:
+- **Discovery** - Find agents by NFT ID or wallet address
+- **Reputation** - Feedback-based scoring with cryptographic authorization
+- **Validation** - zkML-verified trust with on-chain attestations
 
 ### TypeScript SDK
 
@@ -259,10 +276,11 @@ const treasuryAgent = withZkGuardrail(executeProposal, {
 - [x] TypeScript prover client
 
 ### Phase 2 ✅ Complete
-- [x] AgentIdentityRegistry contract
-- [x] Agent DIDs and reputation
-- [x] Credential management
-- [x] AgentPaymentRails for A2A commerce
+- [x] ERC-8004 IdentityRegistry (ERC-721 agent NFTs)
+- [x] ERC-8004 ReputationRegistry (feedback scoring)
+- [x] ERC-8004 ValidationRegistry (zkML attestations)
+- [x] AgentPaymentRails with three-registry architecture
+- [x] zkML trust score aggregation
 
 ### Phase 3 (Next)
 - [ ] On-chain zkML verification
@@ -344,18 +362,25 @@ signAttestation(data, signer) → SignedAttestation
 encodeAttestationForOnchain(attestation) → bytes
 ```
 
-### Solidity Contracts
+### Solidity Contracts (ERC-8004)
 
 ```solidity
-// AgentIdentityRegistry
-createAgentIdentity(wallet, modelCommitment, metadataUri) → did
-updateReputation(did, score, proofHash, txCount, volume)
-issueCredential(did, credType, expiry, proofHash)
-verifyAgentForPayment(did, minRep, credential) → bool
+// IdentityRegistry (ERC-721)
+register(tokenUri) → agentId
+registerWithModel(tokenUri, modelCommitment, wallet) → agentId
+setMetadata(agentId, key, value)
+modelCommitments(agentId) → bytes32
+agentWallets(agentId) → address
 
-// GuardrailAttestationRegistry
-postAttestation(hash, model, input, output, decision, confidence, sig)
-attestationExists(hash) → bool
+// ReputationRegistry
+giveFeedback(agentId, score, tag1, tag2, uri, hash, auth)
+giveOpenFeedback(agentId, score, tag1, tag2, uri, hash)
+getSummary(agentId, clients, tag1, tag2) → (count, avgScore)
+
+// ValidationRegistry (with zkML extensions)
+postZkmlAttestation(agentId, model, input, output, proof, decision, confidence) → hash
+getZkmlTrustScore(agentId, model) → (count, approvalRate, avgConfidence)
+meetsZkmlTrustRequirements(agentId, minAttestations, minApprovalRate, model) → bool
 ```
 
 ## Contributing

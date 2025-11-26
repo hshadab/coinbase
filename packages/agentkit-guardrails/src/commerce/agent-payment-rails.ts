@@ -1,49 +1,58 @@
 /**
- * Agent-to-Agent Payment Rails
+ * Agent-to-Agent Payment Rails (ERC-8004 Compliant)
  *
  * Enables autonomous commerce between AI agents with zkML-verified trust.
- * This module provides the infrastructure for agents to:
- * - Pay other agents with trust verification
- * - Request payments with proof of service
- * - Escrow funds with zkML-gated release
- * - Build payment channels for high-frequency interactions
+ * Built on the ERC-8004 Trustless Agents standard with three registries:
+ * - IdentityRegistry: NFT-based agent identity (ERC-721)
+ * - ReputationRegistry: Feedback and reputation scoring
+ * - ValidationRegistry: zkML proof attestations
  *
  * @module commerce/agent-payment-rails
  */
 
-import { ethers, Contract, Signer, BigNumberish } from "ethers";
+import { ethers, Contract, Signer } from "ethers";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 /**
- * Agent identity as registered on-chain
+ * Agent identity from ERC-8004 IdentityRegistry
  */
 export interface AgentIdentity {
-  did: string;
-  wallet: string;
+  agentId: number;
   owner: string;
+  wallet: string;
   modelCommitment: string;
-  reputationScore: number;
-  totalTransactions: number;
-  totalVolume: bigint;
-  status: AgentStatus;
+  tokenUri: string;
 }
 
-export enum AgentStatus {
-  Active = 0,
-  Suspended = 1,
-  Deactivated = 2,
+/**
+ * Agent reputation from ReputationRegistry
+ */
+export interface AgentReputation {
+  feedbackCount: number;
+  averageScore: number; // 0-100
+}
+
+/**
+ * zkML trust score from ValidationRegistry
+ */
+export interface ZkmlTrustScore {
+  attestationCount: number;
+  approvalRate: number; // 0-100
+  avgConfidence: bigint;
 }
 
 /**
  * Trust requirements for a payment
  */
 export interface TrustRequirements {
-  minReputation: number;
-  requiredCredentials: string[];
-  minTrustLevel: number;
+  minReputationScore: number;
+  minReputationCount: number;
+  minZkmlApprovalRate: number;
+  minZkmlAttestations: number;
+  requiredModelCommitment?: string;
   requireZkmlProof: boolean;
 }
 
@@ -51,10 +60,10 @@ export interface TrustRequirements {
  * Payment request from one agent to another
  */
 export interface AgentPaymentRequest {
-  fromAgent: string; // DID
-  toAgent: string; // DID
+  fromAgentId: number;
+  toAgentId: number;
   amount: bigint;
-  token: string; // Token address (address(0) for ETH)
+  token: string;
   memo: string;
   trustRequirements: TrustRequirements;
   expiresAt: number;
@@ -68,7 +77,7 @@ export interface AgentPayment {
   paymentId: string;
   request: AgentPaymentRequest;
   txHash: string;
-  zkmlProofHash?: string;
+  zkmlAttestationHash?: string;
   timestamp: number;
   status: PaymentStatus;
 }
@@ -86,7 +95,7 @@ export enum PaymentStatus {
 export interface EscrowConfig {
   releaseCondition: "zkml-attestation" | "time-based" | "multi-sig" | "oracle";
   zkmlModelCommitment?: string;
-  requiredConfidence?: number;
+  requiredApprovalRate?: number;
   timeoutSeconds?: number;
   requiredSigners?: string[];
   oracleAddress?: string;
@@ -97,15 +106,15 @@ export interface EscrowConfig {
  */
 export interface Escrow {
   escrowId: string;
-  fromAgent: string;
-  toAgent: string;
+  fromAgentId: number;
+  toAgentId: number;
   amount: bigint;
   token: string;
   config: EscrowConfig;
   status: EscrowStatus;
   createdAt: number;
   releasedAt?: number;
-  zkmlProofHash?: string;
+  zkmlAttestationHash?: string;
 }
 
 export enum EscrowStatus {
@@ -116,27 +125,43 @@ export enum EscrowStatus {
 }
 
 // ============================================================================
+// ERC-8004 Configuration
+// ============================================================================
+
+export interface ERC8004Config {
+  identityRegistryAddress: string;
+  reputationRegistryAddress: string;
+  validationRegistryAddress: string;
+  escrowContractAddress?: string;
+  proverServiceUrl?: string;
+}
+
+// ============================================================================
 // Agent Payment Rails Class
 // ============================================================================
 
 /**
- * AgentPaymentRails - Infrastructure for agent-to-agent payments
+ * AgentPaymentRails - ERC-8004 compliant agent-to-agent payments
  *
  * @example
  * ```typescript
  * const rails = new AgentPaymentRails(signer, {
  *   identityRegistryAddress: "0x...",
- *   escrowContractAddress: "0x...",
+ *   reputationRegistryAddress: "0x...",
+ *   validationRegistryAddress: "0x...",
  *   proverServiceUrl: "http://localhost:3001"
  * });
  *
+ * // Register agent identity (get NFT)
+ * const agentId = await rails.registerIdentity(modelCommitment, "ipfs://...");
+ *
  * // Pay another agent with trust verification
  * const payment = await rails.payAgent({
- *   toAgent: "did:coinbase:agent:0x...",
+ *   toAgentId: 42,
  *   amount: ethers.parseEther("10"),
- *   token: USDC_ADDRESS,
  *   trustRequirements: {
- *     minReputation: 200,
+ *     minReputationScore: 70,
+ *     minZkmlApprovalRate: 80,
  *     requireZkmlProof: true
  *   }
  * });
@@ -145,25 +170,32 @@ export enum EscrowStatus {
 export class AgentPaymentRails {
   private signer: Signer;
   private identityRegistry: Contract;
+  private reputationRegistry: Contract;
+  private validationRegistry: Contract;
   private escrowContract: Contract | null = null;
   private proverServiceUrl: string;
-  private myAgentDid: string | null = null;
+  private myAgentId: number | null = null;
 
-  constructor(
-    signer: Signer,
-    config: {
-      identityRegistryAddress: string;
-      escrowContractAddress?: string;
-      proverServiceUrl?: string;
-    }
-  ) {
+  constructor(signer: Signer, config: ERC8004Config) {
     this.signer = signer;
     this.proverServiceUrl = config.proverServiceUrl || "http://localhost:3001";
 
-    // Initialize identity registry contract
+    // Initialize ERC-8004 registries
     this.identityRegistry = new Contract(
       config.identityRegistryAddress,
       IDENTITY_REGISTRY_ABI,
+      signer
+    );
+
+    this.reputationRegistry = new Contract(
+      config.reputationRegistryAddress,
+      REPUTATION_REGISTRY_ABI,
+      signer
+    );
+
+    this.validationRegistry = new Contract(
+      config.validationRegistryAddress,
+      VALIDATION_REGISTRY_ABI,
       signer
     );
 
@@ -178,165 +210,263 @@ export class AgentPaymentRails {
   }
 
   // ==========================================================================
-  // Identity Management
+  // Identity Management (ERC-8004 IdentityRegistry)
   // ==========================================================================
 
   /**
-   * Register this agent's identity on-chain
+   * Register this agent's identity as an NFT
    */
   async registerIdentity(
     modelCommitment: string,
-    metadataUri: string = ""
-  ): Promise<string> {
+    tokenUri: string = ""
+  ): Promise<number> {
     const wallet = await this.signer.getAddress();
-    const tx = await this.identityRegistry.createAgentIdentity(
-      wallet,
+
+    // Use registerWithModel for zkML-enabled agents
+    const tx = await this.identityRegistry.registerWithModel(
+      tokenUri,
       modelCommitment,
-      metadataUri
+      wallet
     );
     const receipt = await tx.wait();
 
-    // Extract DID from event
+    // Extract agentId from Registered event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "AgentIdentityCreated"
+      (log: any) => log.fragment?.name === "Registered"
     );
     if (event) {
-      this.myAgentDid = event.args[0];
-      return this.myAgentDid;
+      this.myAgentId = Number(event.args[0]);
+      return this.myAgentId;
     }
 
-    throw new Error("Failed to extract DID from transaction");
+    throw new Error("Failed to extract agentId from transaction");
   }
 
   /**
-   * Get my agent DID (cached or lookup)
+   * Get my agent ID (cached or lookup)
    */
-  async getMyAgentDid(): Promise<string> {
-    if (this.myAgentDid) return this.myAgentDid;
+  async getMyAgentId(): Promise<number> {
+    if (this.myAgentId !== null) return this.myAgentId;
 
     const wallet = await this.signer.getAddress();
-    this.myAgentDid = await this.identityRegistry.walletToDid(wallet);
+    this.myAgentId = Number(await this.identityRegistry.getAgentByWallet(wallet));
 
-    if (this.myAgentDid === ethers.ZeroHash) {
+    if (this.myAgentId === 0) {
       throw new Error("Agent not registered. Call registerIdentity first.");
     }
 
-    return this.myAgentDid;
+    return this.myAgentId;
   }
 
   /**
    * Get another agent's identity
    */
-  async getAgentIdentity(agentDid: string): Promise<AgentIdentity> {
-    const identity = await this.identityRegistry.getAgent(agentDid);
+  async getAgentIdentity(agentId: number): Promise<AgentIdentity> {
+    const owner = await this.identityRegistry.ownerOf(agentId);
+    const wallet = await this.identityRegistry.agentWallets(agentId);
+    const modelCommitment = await this.identityRegistry.modelCommitments(agentId);
+    const tokenUri = await this.identityRegistry.tokenURI(agentId);
+
     return {
-      did: identity.did,
-      wallet: identity.wallet,
-      owner: identity.owner,
-      modelCommitment: identity.modelCommitment,
-      reputationScore: Number(identity.reputationScore),
-      totalTransactions: Number(identity.totalTransactions),
-      totalVolume: identity.totalVolume,
-      status: Number(identity.status) as AgentStatus,
+      agentId,
+      owner,
+      wallet,
+      modelCommitment,
+      tokenUri,
     };
   }
 
+  /**
+   * Update agent metadata
+   */
+  async setMetadata(key: string, value: string): Promise<void> {
+    const agentId = await this.getMyAgentId();
+    await this.identityRegistry.setMetadata(
+      agentId,
+      key,
+      ethers.toUtf8Bytes(value)
+    );
+  }
+
   // ==========================================================================
-  // Trust Verification
+  // Reputation (ERC-8004 ReputationRegistry)
   // ==========================================================================
 
   /**
-   * Verify an agent meets trust requirements
+   * Get agent's reputation summary
    */
-  async verifyAgentTrust(
-    agentDid: string,
-    requirements: TrustRequirements
-  ): Promise<{ verified: boolean; reason?: string }> {
-    // Get agent identity
-    const agent = await this.getAgentIdentity(agentDid);
+  async getAgentReputation(
+    agentId: number,
+    tag?: string
+  ): Promise<AgentReputation> {
+    const tag1 = tag ? ethers.encodeBytes32String(tag) : ethers.ZeroHash;
+    const [count, avgScore] = await this.reputationRegistry.getSummary(
+      agentId,
+      [], // all clients
+      tag1,
+      ethers.ZeroHash
+    );
 
-    // Check status
-    if (agent.status !== AgentStatus.Active) {
-      return { verified: false, reason: "Agent is not active" };
-    }
-
-    // Check reputation
-    if (agent.reputationScore < requirements.minReputation) {
-      return {
-        verified: false,
-        reason: `Reputation ${agent.reputationScore} below minimum ${requirements.minReputation}`,
-      };
-    }
-
-    // Check credentials
-    for (const credential of requirements.requiredCredentials) {
-      const hasCredential = await this.identityRegistry.hasValidCredential(
-        agentDid,
-        credential
-      );
-      if (!hasCredential) {
-        return { verified: false, reason: `Missing credential: ${credential}` };
-      }
-    }
-
-    // Check trust level if we have a relationship
-    if (requirements.minTrustLevel > 0) {
-      const myDid = await this.getMyAgentDid();
-      const [trustLevel] = await this.identityRegistry.getTrust(myDid, agentDid);
-      if (Number(trustLevel) < requirements.minTrustLevel) {
-        return {
-          verified: false,
-          reason: `Trust level ${trustLevel} below minimum ${requirements.minTrustLevel}`,
-        };
-      }
-    }
-
-    // Generate zkML proof if required
-    if (requirements.requireZkmlProof) {
-      const proofResult = await this.generateTrustProof(agentDid, requirements);
-      if (!proofResult.success) {
-        return { verified: false, reason: "Failed to generate zkML trust proof" };
-      }
-    }
-
-    return { verified: true };
+    return {
+      feedbackCount: Number(count),
+      averageScore: Number(avgScore),
+    };
   }
 
   /**
-   * Generate a zkML proof of trust verification
+   * Submit feedback for an agent (requires pre-authorization)
    */
-  async generateTrustProof(
-    agentDid: string,
-    requirements: TrustRequirements
-  ): Promise<{ success: boolean; proofHash?: string }> {
+  async submitFeedback(
+    agentId: number,
+    score: number,
+    tag: string,
+    feedbackUri: string,
+    feedbackAuth: string
+  ): Promise<void> {
+    const tag1 = ethers.encodeBytes32String(tag);
+    const feedbackHash = ethers.keccak256(ethers.toUtf8Bytes(feedbackUri));
+
+    await this.reputationRegistry.giveFeedback(
+      agentId,
+      score,
+      tag1,
+      ethers.ZeroHash,
+      feedbackUri,
+      feedbackHash,
+      feedbackAuth
+    );
+  }
+
+  /**
+   * Submit open feedback (no authorization required)
+   */
+  async submitOpenFeedback(
+    agentId: number,
+    score: number,
+    tag: string,
+    feedbackUri: string
+  ): Promise<void> {
+    const tag1 = ethers.encodeBytes32String(tag);
+    const feedbackHash = ethers.keccak256(ethers.toUtf8Bytes(feedbackUri));
+
+    await this.reputationRegistry.giveOpenFeedback(
+      agentId,
+      score,
+      tag1,
+      ethers.ZeroHash,
+      feedbackUri,
+      feedbackHash
+    );
+  }
+
+  // ==========================================================================
+  // zkML Validation (ERC-8004 ValidationRegistry + Extensions)
+  // ==========================================================================
+
+  /**
+   * Get agent's zkML trust score
+   */
+  async getZkmlTrustScore(
+    agentId: number,
+    modelCommitment?: string
+  ): Promise<ZkmlTrustScore> {
+    const model = modelCommitment || ethers.ZeroHash;
+    const [count, rate, confidence] = await this.validationRegistry.getZkmlTrustScore(
+      agentId,
+      model
+    );
+
+    return {
+      attestationCount: Number(count),
+      approvalRate: Number(rate),
+      avgConfidence: confidence,
+    };
+  }
+
+  /**
+   * Post a zkML attestation for an agent
+   */
+  async postZkmlAttestation(
+    agentId: number,
+    modelCommitment: string,
+    inputHash: string,
+    outputHash: string,
+    proofHash: string,
+    decision: number, // 0=reject, 1=approve, 2=review
+    confidence: bigint
+  ): Promise<string> {
+    const tx = await this.validationRegistry.postZkmlAttestation(
+      agentId,
+      modelCommitment,
+      inputHash,
+      outputHash,
+      proofHash,
+      decision,
+      confidence
+    );
+    const receipt = await tx.wait();
+
+    // Extract attestation hash from event
+    const event = receipt.logs.find(
+      (log: any) => log.fragment?.name === "ZkmlAttestationPosted"
+    );
+
+    return event?.args[0] || ethers.ZeroHash;
+  }
+
+  /**
+   * Generate and post a zkML proof for trust verification
+   */
+  async generateAndPostTrustProof(
+    targetAgentId: number
+  ): Promise<{ success: boolean; attestationHash?: string }> {
     try {
-      const agent = await this.getAgentIdentity(agentDid);
+      const identity = await this.getAgentIdentity(targetAgentId);
+      const reputation = await this.getAgentReputation(targetAgentId);
 
       // Prepare features for the authorization model
       const features = [
-        Math.min(15, Math.floor(agent.reputationScore / 100)), // budget proxy
-        Math.min(7, Math.floor(agent.reputationScore / 150)), // trust
-        requirements.minReputation / 100, // amount proxy
+        Math.min(15, Math.floor(reputation.averageScore / 7)), // budget proxy
+        Math.min(7, Math.floor(reputation.averageScore / 15)), // trust
+        Math.min(1000, reputation.feedbackCount), // amount proxy
         0, // category
-        Math.min(7, agent.totalTransactions % 8), // velocity
+        Math.min(7, reputation.feedbackCount % 8), // velocity
         new Date().getDay(), // day
         Math.floor(new Date().getHours() / 8), // time bucket
-        agent.status === AgentStatus.Active ? 0 : 1, // risk
+        reputation.averageScore > 50 ? 0 : 1, // risk
       ];
 
       const response = await fetch(`${this.proverServiceUrl}/prove`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model_id: "trust-verification",
+          model_id: identity.modelCommitment,
           inputs: features,
         }),
       });
 
       const result = await response.json();
 
-      if (result.success) {
-        return { success: true, proofHash: result.proof };
+      if (result.success && result.decision === "approve") {
+        // Post attestation on-chain
+        const inputHash = ethers.keccak256(
+          ethers.AbiCoder.defaultAbiCoder().encode(["uint256[]"], [features.map(f => Math.floor(f))])
+        );
+        const outputHash = ethers.keccak256(
+          ethers.toUtf8Bytes(result.decision)
+        );
+
+        const attestationHash = await this.postZkmlAttestation(
+          targetAgentId,
+          identity.modelCommitment,
+          inputHash,
+          outputHash,
+          result.proof_hash || ethers.ZeroHash,
+          1, // approve
+          BigInt(Math.floor(result.confidence * 1e18))
+        );
+
+        return { success: true, attestationHash };
       }
 
       return { success: false };
@@ -347,6 +477,76 @@ export class AgentPaymentRails {
   }
 
   // ==========================================================================
+  // Trust Verification (Combined)
+  // ==========================================================================
+
+  /**
+   * Verify an agent meets trust requirements
+   */
+  async verifyAgentTrust(
+    agentId: number,
+    requirements: TrustRequirements
+  ): Promise<{ verified: boolean; reason?: string }> {
+    // Check agent exists
+    try {
+      await this.identityRegistry.ownerOf(agentId);
+    } catch {
+      return { verified: false, reason: "Agent does not exist" };
+    }
+
+    // Check reputation
+    if (requirements.minReputationScore > 0 || requirements.minReputationCount > 0) {
+      const reputation = await this.getAgentReputation(agentId);
+
+      if (reputation.averageScore < requirements.minReputationScore) {
+        return {
+          verified: false,
+          reason: `Reputation score ${reputation.averageScore} below minimum ${requirements.minReputationScore}`,
+        };
+      }
+
+      if (reputation.feedbackCount < requirements.minReputationCount) {
+        return {
+          verified: false,
+          reason: `Feedback count ${reputation.feedbackCount} below minimum ${requirements.minReputationCount}`,
+        };
+      }
+    }
+
+    // Check zkML trust score
+    if (requirements.minZkmlApprovalRate > 0 || requirements.minZkmlAttestations > 0) {
+      const zkmlScore = await this.getZkmlTrustScore(
+        agentId,
+        requirements.requiredModelCommitment
+      );
+
+      if (zkmlScore.approvalRate < requirements.minZkmlApprovalRate) {
+        return {
+          verified: false,
+          reason: `zkML approval rate ${zkmlScore.approvalRate}% below minimum ${requirements.minZkmlApprovalRate}%`,
+        };
+      }
+
+      if (zkmlScore.attestationCount < requirements.minZkmlAttestations) {
+        return {
+          verified: false,
+          reason: `zkML attestation count ${zkmlScore.attestationCount} below minimum ${requirements.minZkmlAttestations}`,
+        };
+      }
+    }
+
+    // Generate fresh zkML proof if required
+    if (requirements.requireZkmlProof) {
+      const proofResult = await this.generateAndPostTrustProof(agentId);
+      if (!proofResult.success) {
+        return { verified: false, reason: "Failed to generate zkML trust proof" };
+      }
+    }
+
+    return { verified: true };
+  }
+
+  // ==========================================================================
   // Payments
   // ==========================================================================
 
@@ -354,27 +554,29 @@ export class AgentPaymentRails {
    * Pay another agent with trust verification
    */
   async payAgent(params: {
-    toAgent: string;
+    toAgentId: number;
     amount: bigint;
     token?: string;
     memo?: string;
     trustRequirements?: Partial<TrustRequirements>;
   }): Promise<AgentPayment> {
     const requirements: TrustRequirements = {
-      minReputation: params.trustRequirements?.minReputation ?? 100,
-      requiredCredentials: params.trustRequirements?.requiredCredentials ?? [],
-      minTrustLevel: params.trustRequirements?.minTrustLevel ?? 0,
+      minReputationScore: params.trustRequirements?.minReputationScore ?? 0,
+      minReputationCount: params.trustRequirements?.minReputationCount ?? 0,
+      minZkmlApprovalRate: params.trustRequirements?.minZkmlApprovalRate ?? 0,
+      minZkmlAttestations: params.trustRequirements?.minZkmlAttestations ?? 0,
+      requiredModelCommitment: params.trustRequirements?.requiredModelCommitment,
       requireZkmlProof: params.trustRequirements?.requireZkmlProof ?? false,
     };
 
     // Verify recipient meets trust requirements
-    const verification = await this.verifyAgentTrust(params.toAgent, requirements);
+    const verification = await this.verifyAgentTrust(params.toAgentId, requirements);
     if (!verification.verified) {
       throw new Error(`Trust verification failed: ${verification.reason}`);
     }
 
     // Get recipient wallet
-    const recipientIdentity = await this.getAgentIdentity(params.toAgent);
+    const recipientIdentity = await this.getAgentIdentity(params.toAgentId);
     const recipientWallet = recipientIdentity.wallet;
 
     // Execute payment
@@ -397,23 +599,32 @@ export class AgentPaymentRails {
       txHash = receipt.hash;
     }
 
-    // Record interaction
-    const myDid = await this.getMyAgentDid();
-    await this.identityRegistry.recordInteraction(myDid, params.toAgent, true);
+    // Submit positive feedback for completed payment
+    const myAgentId = await this.getMyAgentId();
+    try {
+      await this.submitOpenFeedback(
+        params.toAgentId,
+        90, // High score for successful payment
+        "payment",
+        `payment:${txHash}`
+      );
+    } catch {
+      // Feedback submission is optional
+    }
 
     // Generate payment ID
     const paymentId = ethers.keccak256(
       ethers.solidityPacked(
-        ["string", "string", "uint256", "uint256"],
-        [myDid, params.toAgent, params.amount, Date.now()]
+        ["uint256", "uint256", "uint256", "uint256"],
+        [myAgentId, params.toAgentId, params.amount, Date.now()]
       )
     );
 
     return {
       paymentId,
       request: {
-        fromAgent: myDid,
-        toAgent: params.toAgent,
+        fromAgentId: myAgentId,
+        toAgentId: params.toAgentId,
         amount: params.amount,
         token,
         memo: params.memo || "",
@@ -431,24 +642,24 @@ export class AgentPaymentRails {
    * Request payment from another agent
    */
   async requestPayment(params: {
-    fromAgent: string;
+    fromAgentId: number;
     amount: bigint;
     token?: string;
     memo?: string;
-    serviceProofHash?: string;
   }): Promise<AgentPaymentRequest> {
-    const myDid = await this.getMyAgentDid();
+    const myAgentId = await this.getMyAgentId();
 
     return {
-      fromAgent: params.fromAgent,
-      toAgent: myDid,
+      fromAgentId: params.fromAgentId,
+      toAgentId: myAgentId,
       amount: params.amount,
       token: params.token || ethers.ZeroAddress,
       memo: params.memo || "",
       trustRequirements: {
-        minReputation: 0,
-        requiredCredentials: [],
-        minTrustLevel: 0,
+        minReputationScore: 0,
+        minReputationCount: 0,
+        minZkmlApprovalRate: 0,
+        minZkmlAttestations: 0,
         requireZkmlProof: false,
       },
       expiresAt: Math.floor(Date.now() / 1000) + 86400, // 24 hours
@@ -464,7 +675,7 @@ export class AgentPaymentRails {
    * Create an escrow with zkML-gated release
    */
   async createEscrow(params: {
-    toAgent: string;
+    toAgentId: number;
     amount: bigint;
     token?: string;
     config: EscrowConfig;
@@ -473,16 +684,16 @@ export class AgentPaymentRails {
       throw new Error("Escrow contract not configured");
     }
 
-    const myDid = await this.getMyAgentDid();
+    const myAgentId = await this.getMyAgentId();
     const token = params.token || ethers.ZeroAddress;
 
     // Create escrow on-chain
     let tx;
     if (token === ethers.ZeroAddress) {
       tx = await this.escrowContract.createEscrow(
-        params.toAgent,
+        params.toAgentId,
         params.config.zkmlModelCommitment || ethers.ZeroHash,
-        params.config.requiredConfidence || 80,
+        params.config.requiredApprovalRate || 80,
         params.config.timeoutSeconds || 86400,
         { value: params.amount }
       );
@@ -494,9 +705,9 @@ export class AgentPaymentRails {
       tx = await this.escrowContract.createEscrowERC20(
         token,
         params.amount,
-        params.toAgent,
+        params.toAgentId,
         params.config.zkmlModelCommitment || ethers.ZeroHash,
-        params.config.requiredConfidence || 80,
+        params.config.requiredApprovalRate || 80,
         params.config.timeoutSeconds || 86400
       );
     }
@@ -510,8 +721,8 @@ export class AgentPaymentRails {
 
     return {
       escrowId: event?.args[0] || ethers.ZeroHash,
-      fromAgent: myDid,
-      toAgent: params.toAgent,
+      fromAgentId: myAgentId,
+      toAgentId: params.toAgentId,
       amount: params.amount,
       token,
       config: params.config,
@@ -525,14 +736,14 @@ export class AgentPaymentRails {
    */
   async releaseEscrow(
     escrowId: string,
-    zkmlProofHash: string
+    zkmlAttestationHash: string
   ): Promise<{ success: boolean; txHash?: string }> {
     if (!this.escrowContract) {
       throw new Error("Escrow contract not configured");
     }
 
     try {
-      const tx = await this.escrowContract.releaseWithProof(escrowId, zkmlProofHash);
+      const tx = await this.escrowContract.releaseWithProof(escrowId, zkmlAttestationHash);
       const receipt = await tx.wait();
 
       return { success: true, txHash: receipt.hash };
@@ -541,55 +752,81 @@ export class AgentPaymentRails {
       return { success: false };
     }
   }
-
-  // ==========================================================================
-  // Trust Management
-  // ==========================================================================
-
-  /**
-   * Establish trust with another agent
-   */
-  async establishTrust(toAgent: string, trustLevel: number): Promise<void> {
-    const myDid = await this.getMyAgentDid();
-    await this.identityRegistry.establishTrust(myDid, toAgent, trustLevel);
-  }
-
-  /**
-   * Get trust level with another agent
-   */
-  async getTrustLevel(toAgent: string): Promise<{
-    trustLevel: number;
-    successRate: number;
-  }> {
-    const myDid = await this.getMyAgentDid();
-    const [level, rate] = await this.identityRegistry.getTrust(myDid, toAgent);
-    return {
-      trustLevel: Number(level),
-      successRate: Number(rate),
-    };
-  }
 }
 
 // ============================================================================
-// Contract ABIs (minimal)
+// Contract ABIs (ERC-8004 Compliant)
 // ============================================================================
 
 const IDENTITY_REGISTRY_ABI = [
-  "function createAgentIdentity(address wallet, bytes32 modelCommitment, string metadataUri) external returns (bytes32)",
-  "function getAgent(bytes32 agentDid) external view returns (tuple(bytes32 did, address wallet, address owner, bytes32 modelCommitment, uint256 reputationScore, uint256 totalTransactions, uint256 totalVolume, uint256 createdAt, uint256 lastActiveAt, uint8 status, string metadataUri))",
-  "function walletToDid(address wallet) external view returns (bytes32)",
-  "function hasValidCredential(bytes32 agentDid, bytes32 credentialType) external view returns (bool)",
-  "function getTrust(bytes32 fromDid, bytes32 toDid) external view returns (uint256 level, uint256 successRate)",
-  "function establishTrust(bytes32 fromDid, bytes32 toDid, uint256 trustLevel) external",
-  "function recordInteraction(bytes32 fromDid, bytes32 toDid, bool successful) external",
-  "event AgentIdentityCreated(bytes32 indexed agentDid, address indexed wallet, address indexed owner, bytes32 modelCommitment, uint256 timestamp)",
+  // ERC-721 Standard
+  "function ownerOf(uint256 tokenId) external view returns (address)",
+  "function tokenURI(uint256 tokenId) external view returns (string)",
+  "function isApprovedForAll(address owner, address operator) external view returns (bool)",
+  "function getApproved(uint256 tokenId) external view returns (address)",
+  // ERC-8004 IdentityRegistry
+  "function register() external returns (uint256 agentId)",
+  "function register(string tokenUri) external returns (uint256 agentId)",
+  "function register(string tokenUri, tuple(string key, bytes value)[] metadata) external returns (uint256 agentId)",
+  "function getMetadata(uint256 agentId, string key) external view returns (bytes)",
+  "function setMetadata(uint256 agentId, string key, bytes value) external",
+  "function setAgentUri(uint256 agentId, string newUri) external",
+  // zkML Extensions
+  "function registerWithModel(string tokenUri, bytes32 modelCommitment, address wallet) external returns (uint256 agentId)",
+  "function modelCommitments(uint256 agentId) external view returns (bytes32)",
+  "function agentWallets(uint256 agentId) external view returns (address)",
+  "function getAgentByWallet(address wallet) external view returns (uint256)",
+  "function setModelCommitment(uint256 agentId, bytes32 modelCommitment) external",
+  "function setAgentWallet(uint256 agentId, address wallet) external",
+  // Events
+  "event Registered(uint256 indexed agentId, string tokenURI, address indexed owner)",
+  "event ModelCommitmentSet(uint256 indexed agentId, bytes32 modelCommitment)",
+  "event AgentWalletSet(uint256 indexed agentId, address indexed wallet)",
+];
+
+const REPUTATION_REGISTRY_ABI = [
+  // ERC-8004 ReputationRegistry
+  "function giveFeedback(uint256 agentId, uint8 score, bytes32 tag1, bytes32 tag2, string feedbackUri, bytes32 feedbackHash, bytes feedbackAuth) external",
+  "function giveOpenFeedback(uint256 agentId, uint8 score, bytes32 tag1, bytes32 tag2, string feedbackUri, bytes32 feedbackHash) external",
+  "function revokeFeedback(uint256 agentId, uint64 feedbackIndex) external",
+  "function appendResponse(uint256 agentId, address clientAddress, uint64 feedbackIndex, string responseUri, bytes32 responseHash) external",
+  "function getLastIndex(uint256 agentId, address clientAddress) external view returns (uint64)",
+  "function readFeedback(uint256 agentId, address clientAddress, uint64 index) external view returns (uint8 score, bytes32 tag1, bytes32 tag2, bool isRevoked)",
+  "function getSummary(uint256 agentId, address[] clientAddresses, bytes32 tag1, bytes32 tag2) external view returns (uint64 count, uint8 averageScore)",
+  "function getClients(uint256 agentId) external view returns (address[])",
+  // Events
+  "event NewFeedback(uint256 indexed agentId, address indexed clientAddress, uint8 score, bytes32 indexed tag1, bytes32 tag2, string feedbackUri, bytes32 feedbackHash)",
+  "event FeedbackRevoked(uint256 indexed agentId, address indexed clientAddress, uint64 indexed feedbackIndex)",
+];
+
+const VALIDATION_REGISTRY_ABI = [
+  // ERC-8004 ValidationRegistry
+  "function validationRequest(address validatorAddress, uint256 agentId, string requestUri, bytes32 requestHash) external",
+  "function validationResponse(bytes32 requestHash, uint8 response, string responseUri, bytes32 responseHash, bytes32 tag) external",
+  "function getValidationStatus(bytes32 requestHash) external view returns (address validatorAddress, uint256 agentId, uint8 response, bytes32 responseHash, bytes32 tag, uint256 lastUpdate)",
+  "function getSummary(uint256 agentId, address[] validatorAddresses, bytes32 tag) external view returns (uint64 count, uint8 avgResponse)",
+  "function getAgentValidations(uint256 agentId) external view returns (bytes32[])",
+  "function getValidatorRequests(address validatorAddress) external view returns (bytes32[])",
+  // zkML Extensions
+  "function registerZkmlValidator(address validator, bool active) external",
+  "function zkmlValidators(address validator) external view returns (bool)",
+  "function postZkmlAttestation(uint256 agentId, bytes32 modelCommitment, bytes32 inputHash, bytes32 outputHash, bytes32 proofHash, uint8 decision, uint96 confidence) external returns (bytes32 attestationHash)",
+  "function verifyZkmlAttestation(bytes32 attestationHash, bytes32 expectedModel, uint8 expectedDecision) external view returns (bool valid)",
+  "function getZkmlAttestation(bytes32 attestationHash) external view returns (tuple(bytes32 modelCommitment, bytes32 inputHash, bytes32 outputHash, bytes32 proofHash, uint8 decision, uint96 confidence, uint256 timestamp, address attester))",
+  "function getAgentAttestations(uint256 agentId) external view returns (bytes32[])",
+  "function getZkmlTrustScore(uint256 agentId, bytes32 modelCommitment) external view returns (uint64 attestationCount, uint8 approvalRate, uint96 avgConfidence)",
+  "function meetsZkmlTrustRequirements(uint256 agentId, uint64 minAttestations, uint8 minApprovalRate, bytes32 requiredModel) external view returns (bool meets)",
+  // Events
+  "event ValidationRequest(address indexed validatorAddress, uint256 indexed agentId, string requestUri, bytes32 indexed requestHash)",
+  "event ValidationResponse(address indexed validatorAddress, uint256 indexed agentId, bytes32 indexed requestHash, uint8 response, string responseUri, bytes32 responseHash, bytes32 tag)",
+  "event ZkmlAttestationPosted(bytes32 indexed attestationHash, uint256 indexed agentId, bytes32 modelCommitment, uint8 decision, uint96 confidence)",
 ];
 
 const ESCROW_ABI = [
-  "function createEscrow(bytes32 toAgent, bytes32 modelCommitment, uint256 requiredConfidence, uint256 timeout) external payable returns (bytes32)",
-  "function createEscrowERC20(address token, uint256 amount, bytes32 toAgent, bytes32 modelCommitment, uint256 requiredConfidence, uint256 timeout) external returns (bytes32)",
-  "function releaseWithProof(bytes32 escrowId, bytes32 proofHash) external",
-  "event EscrowCreated(bytes32 indexed escrowId, bytes32 indexed fromAgent, bytes32 indexed toAgent, uint256 amount)",
+  "function createEscrow(uint256 toAgentId, bytes32 modelCommitment, uint256 requiredApprovalRate, uint256 timeout) external payable returns (bytes32)",
+  "function createEscrowERC20(address token, uint256 amount, uint256 toAgentId, bytes32 modelCommitment, uint256 requiredApprovalRate, uint256 timeout) external returns (bytes32)",
+  "function releaseWithProof(bytes32 escrowId, bytes32 attestationHash) external",
+  "event EscrowCreated(bytes32 indexed escrowId, uint256 indexed fromAgentId, uint256 indexed toAgentId, uint256 amount)",
 ];
 
 const ERC20_ABI = [
@@ -605,19 +842,22 @@ const ERC20_ABI = [
 export { AgentPaymentRails as default };
 
 /**
- * Create payment rails with default configuration
+ * Create payment rails with ERC-8004 configuration
  */
 export function createPaymentRails(
   signer: Signer,
-  identityRegistryAddress: string,
-  options?: {
-    escrowContractAddress?: string;
-    proverServiceUrl?: string;
-  }
+  config: ERC8004Config
 ): AgentPaymentRails {
-  return new AgentPaymentRails(signer, {
-    identityRegistryAddress,
-    escrowContractAddress: options?.escrowContractAddress,
-    proverServiceUrl: options?.proverServiceUrl,
-  });
+  return new AgentPaymentRails(signer, config);
 }
+
+/**
+ * Default trust requirements for payments
+ */
+export const DEFAULT_TRUST_REQUIREMENTS: TrustRequirements = {
+  minReputationScore: 50,
+  minReputationCount: 3,
+  minZkmlApprovalRate: 70,
+  minZkmlAttestations: 1,
+  requireZkmlProof: false,
+};
