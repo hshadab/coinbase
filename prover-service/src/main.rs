@@ -4,6 +4,7 @@
 //! This service wraps the Jolt Atlas proving system and exposes
 //! a simple REST API for proof generation and verification.
 
+mod jolt_atlas;
 mod prover;
 mod types;
 mod verification;
