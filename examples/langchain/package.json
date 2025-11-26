@@ -1,0 +1,20 @@
+{
+  "name": "jolt-atlas-langchain-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "dependencies": {
+    "@jolt-atlas/agentkit-guardrails": "workspace:*",
+    "@coinbase/agentkit": "^0.2.0",
+    "@coinbase/agentkit-langchain": "^0.2.0",
+    "@langchain/openai": "^0.3.0",
+    "@langchain/langgraph": "^0.2.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}

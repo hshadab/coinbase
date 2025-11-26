@@ -1,0 +1,65 @@
+{
+  "name": "@jolt-atlas/agentkit-guardrails",
+  "version": "0.1.0",
+  "description": "zkML guardrails for Coinbase AgentKit - cryptographic proof that your agent ran the policy it claimed",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./attestation": {
+      "import": "./dist/attestation/index.mjs",
+      "require": "./dist/attestation/index.js",
+      "types": "./dist/attestation/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "viem": "^2.0.0",
+    "onnxruntime-node": "^1.16.0"
+  },
+  "peerDependencies": {
+    "@coinbase/agentkit": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@coinbase/agentkit": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@coinbase/agentkit": "^0.2.0",
+    "@types/node": "^20.10.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "zkml",
+    "jolt",
+    "agentkit",
+    "coinbase",
+    "guardrails",
+    "zero-knowledge",
+    "ai-agents",
+    "crypto"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jolt-atlas/agentkit-guardrails"
+  },
+  "license": "MIT"
+}
