@@ -1,2 +1,7 @@
 .env
 *.env
+
+# Foundry build artifacts
+contracts/cache/
+contracts/out/
+contracts/lib/forge-std/
