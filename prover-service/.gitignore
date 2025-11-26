@@ -1,0 +1,13 @@
+# Build output
+/target/
+
+# Model files (large binaries)
+/models/*.onnx
+/models/*.bin
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store

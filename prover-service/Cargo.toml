@@ -10,7 +10,8 @@ default = ["mock-prover"]
 # Use mock prover (for development without Jolt Atlas)
 mock-prover = []
 # Use real Jolt Atlas prover (requires jolt-atlas crate)
-real-prover = ["jolt-sdk", "ark-bn254", "ark-serialize"]
+# Enable when jolt dependencies are uncommented:
+# real-prover = ["jolt-sdk", "ark-bn254", "ark-serialize"]
 
 [dependencies]
 # Web framework
@@ -27,17 +28,18 @@ bincode = "1.3"
 sha2 = "0.10"
 hex = "0.4"
 
-# ONNX runtime for model inference
-ort = { version = "2.0", default-features = false, features = ["ndarray"], optional = true }
+# ONNX runtime for model inference (optional - not needed for mock prover)
+# ort = { version = "1.16", default-features = false, features = ["ndarray"], optional = true }
 ndarray = "0.15"
 
 # Jolt SDK (zkVM proving system)
 # When real-prover feature is enabled, uses the actual Jolt SDK
-jolt-sdk = { git = "https://github.com/a16z/jolt", optional = true }
+# Uncomment when ready to integrate:
+# jolt-sdk = { git = "https://github.com/a16z/jolt", optional = true }
 
 # Arkworks for proof serialization (used by Jolt)
-ark-bn254 = { version = "0.4", optional = true }
-ark-serialize = { version = "0.4", optional = true }
+# ark-bn254 = { version = "0.4", optional = true }
+# ark-serialize = { version = "0.4", optional = true }
 
 # Jolt Atlas (zkML extension) - uncomment when publicly available
 # jolt-atlas = { git = "https://github.com/ICME-Lab/jolt-atlas", optional = true }

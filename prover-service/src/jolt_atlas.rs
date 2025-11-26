@@ -240,7 +240,9 @@ pub mod mock {
 // Real Jolt Atlas Prover (when real-prover feature is enabled)
 // ============================================================================
 
-#[cfg(feature = "real-prover")]
+// Uncomment when real-prover feature is available:
+// #[cfg(feature = "real-prover")]
+#[allow(dead_code)]
 pub mod real {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -428,19 +430,20 @@ pub fn deserialize_proof(encoded: &str) -> Result<JoltAtlasProof> {
 
 /// Create the appropriate prover based on features
 pub fn create_prover() -> Result<Box<dyn ZkmlProver>> {
-    #[cfg(feature = "real-prover")]
-    {
-        tracing::info!("Creating real Jolt Atlas prover");
-        Ok(Box::new(real::RealProver::new()?))
-    }
+    // When real-prover feature is available, uncomment:
+    // #[cfg(feature = "real-prover")]
+    // {
+    //     tracing::info!("Creating real Jolt Atlas prover");
+    //     return Ok(Box::new(real::RealProver::new()?));
+    // }
 
-    #[cfg(all(feature = "mock-prover", not(feature = "real-prover")))]
+    #[cfg(feature = "mock-prover")]
     {
         tracing::info!("Creating mock Jolt Atlas prover");
         Ok(Box::new(mock::MockProver::new()))
     }
 
-    #[cfg(not(any(feature = "mock-prover", feature = "real-prover")))]
+    #[cfg(not(feature = "mock-prover"))]
     {
         Err(anyhow!("No prover feature enabled"))
     }
