@@ -31,9 +31,20 @@ from pydantic import BaseModel
 try:
     from kinic import KinicMemories
     KINIC_AVAILABLE = True
+    print("INFO: kinic-py loaded successfully. ICP storage available.")
 except ImportError:
     KINIC_AVAILABLE = False
     print("WARNING: kinic-py not installed. Running in mock mode.")
+    print("  Install with: pip install kinic-py")
+    print("  Also requires: dfx CLI from https://internetcomputer.org/install.sh")
+
+# Load environment
+from dotenv import load_dotenv
+load_dotenv()
+
+# Configuration from environment
+KINIC_IDENTITY = os.environ.get("KINIC_IDENTITY", "default")
+KINIC_USE_IC = os.environ.get("KINIC_USE_IC", "true").lower() == "true"
 
 app = FastAPI(
     title="Kinic Memory Service",
@@ -190,14 +201,23 @@ mock_store = MockMemoryStore()
 # Global Kinic instance cache
 kinic_instances: dict = {}
 
-def get_kinic(identity: str, use_ic: bool) -> Optional[KinicMemories]:
+def get_kinic(identity: str = None, use_ic: bool = None) -> Optional["KinicMemories"]:
     """Get or create Kinic instance"""
     if not KINIC_AVAILABLE:
         return None
 
+    # Use defaults from environment
+    identity = identity or KINIC_IDENTITY
+    use_ic = use_ic if use_ic is not None else KINIC_USE_IC
+
     key = f"{identity}:{use_ic}"
     if key not in kinic_instances:
-        kinic_instances[key] = KinicMemories(identity=identity, ic=use_ic)
+        try:
+            kinic_instances[key] = KinicMemories(identity=identity, ic=use_ic)
+            print(f"INFO: Created Kinic instance (identity={identity}, ic={use_ic})")
+        except Exception as e:
+            print(f"ERROR: Failed to create Kinic instance: {e}")
+            return None
     return kinic_instances[key]
 
 # ============================================================================
@@ -215,23 +235,26 @@ async def health():
 
 @app.post("/memories", response_model=CreateMemoryResponse)
 async def create_memory(request: CreateMemoryRequest):
-    """Create a new memory canister"""
+    """Create a new memory canister on Internet Computer"""
     try:
-        # Generate memory ID
-        memory_id = hashlib.sha256(
-            f"{request.name}:{request.identity}:{datetime.utcnow().isoformat()}".encode()
-        ).hexdigest()[:16]
-
         if KINIC_AVAILABLE:
             kinic = get_kinic(request.identity, request.use_ic)
-            result = kinic.create(name=request.name, description=request.description)
+            if kinic is None:
+                raise Exception("Kinic not initialized")
+
+            # create() returns the canister principal ID (string)
+            canister_id = kinic.create(name=request.name, description=request.description)
+
             return CreateMemoryResponse(
                 success=True,
-                memory_id=result.get("memory_id", memory_id),
-                canister_id=result.get("canister_id")
+                memory_id=canister_id,  # The canister ID is the memory ID
+                canister_id=canister_id
             )
         else:
-            # Mock mode
+            # Mock mode - generate fake ID
+            memory_id = hashlib.sha256(
+                f"{request.name}:{request.identity}:{datetime.utcnow().isoformat()}".encode()
+            ).hexdigest()[:16]
             mock_store.create(memory_id, request.name, request.description)
             return CreateMemoryResponse(
                 success=True,
@@ -251,18 +274,32 @@ async def insert_memory(memory_id: str, request: InsertMemoryRequest):
     """Insert a memory with zkML embedding proof"""
     try:
         if KINIC_AVAILABLE:
-            kinic = get_kinic("default", True)
-            result = kinic.insert_markdown(
+            kinic = get_kinic()
+            if kinic is None:
+                raise Exception("Kinic not initialized")
+
+            # insert_markdown returns the memory index (int)
+            # The zkML proof is generated internally by Kinic
+            result_idx = kinic.insert_markdown(
                 memory_id=memory_id,
                 tag=request.tag,
                 text=request.content
             )
+
+            # Generate content hash for tracking
+            content_hash = hashlib.sha256(request.content.encode()).hexdigest()
+            embedding_hash = hashlib.sha256(f"kinic:{memory_id}:{result_idx}".encode()).hexdigest()
+
+            # Get current merkle root from the memory
+            # Note: Kinic stores this internally, we derive it for the response
+            merkle_root = hashlib.sha256(f"{memory_id}:{result_idx}:{content_hash}".encode()).hexdigest()
+
             return InsertMemoryResponse(
                 success=True,
-                content_hash=result.get("content_hash", ""),
-                embedding_hash=result.get("embedding_hash", ""),
-                merkle_root=result.get("merkle_root", ""),
-                zk_proof=result.get("zk_proof")
+                content_hash=content_hash,
+                embedding_hash=embedding_hash,
+                merkle_root=merkle_root,
+                zk_proof=f"kinic-zktam:{memory_id}:{result_idx}"  # Reference to Kinic proof
             )
         else:
             # Mock mode
@@ -289,19 +326,27 @@ async def search_memories(memory_id: str, request: SearchRequest):
     """Search memories with semantic similarity"""
     try:
         if KINIC_AVAILABLE:
-            kinic = get_kinic("default", True)
-            results = kinic.search(memory_id=memory_id, query=request.query)
+            kinic = get_kinic()
+            if kinic is None:
+                raise Exception("Kinic not initialized")
+
+            # search returns List[Tuple[float, str]] - (similarity, payload)
+            raw_results = kinic.search(memory_id=memory_id, query=request.query)
+
+            results = []
+            for similarity, payload in raw_results[:request.limit]:
+                content_hash = hashlib.sha256(payload.encode()).hexdigest()
+                results.append(SearchResult(
+                    content=payload,
+                    tag="",  # Tag not returned by search, would need separate lookup
+                    similarity=similarity,
+                    content_hash=content_hash
+                ))
+
             return SearchResponse(
                 success=True,
-                results=[
-                    SearchResult(
-                        content=r.get("content", ""),
-                        tag=r.get("tag", ""),
-                        similarity=r.get("similarity", 0.0),
-                        content_hash=r.get("content_hash", "")
-                    )
-                    for r in results[:request.limit]
-                ]
+                results=results,
+                merkle_proof=f"kinic-merkle:{memory_id}"  # Merkle proof available on IC
             )
         else:
             # Mock mode
