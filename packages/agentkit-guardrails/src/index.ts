@@ -73,7 +73,20 @@ export {
   type ProofResult,
   type VerificationResult,
   type ProverConfig,
+  // Prover service client
+  ProverServiceClient,
+  getProverServiceClient,
+  isProverServiceAvailable,
 } from './proof/proof-generator.js';
+
+// Re-export prover client types
+export type {
+  ProverServiceConfig,
+  PublicInputs,
+  ProverResult,
+  VerificationResult as ProverVerificationResult,
+  ModelRegistrationResult,
+} from './proof/prover-client.js';
 
 // Attestation exports
 export {

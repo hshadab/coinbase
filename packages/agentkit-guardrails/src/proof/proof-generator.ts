@@ -2,18 +2,26 @@
  * Proof generation for zkML guardrails
  *
  * This module handles proof generation using Jolt Atlas.
- * For Phase 1, we use a mock prover that generates proof-like outputs.
- * In production, this integrates with the actual Jolt Atlas proving system.
+ * It supports three modes:
+ * 1. Remote prover service (production) - calls the Rust prover service
+ * 2. Mock prover (development) - generates mock proofs for testing
+ * 3. Auto mode - uses prover service if available, falls back to mock
  */
 
 import type { FeatureVector, PolicyDecision } from '../core/types.js';
 import { createHash, randomBytes } from 'crypto';
+import {
+  ProverServiceClient,
+  getProverServiceClient,
+  isProverServiceAvailable,
+  type PublicInputs,
+} from './prover-client.js';
 
 /**
  * Proof generation result
  */
 export interface ProofResult {
-  /** Proof bytes (hex encoded) */
+  /** Proof bytes (base64 for real proofs, hex for mock) */
   proof: string;
 
   /** Model commitment */
@@ -30,6 +38,12 @@ export interface ProofResult {
 
   /** Proof size in bytes */
   proofSizeBytes: number;
+
+  /** Public inputs (for real proofs) */
+  publicInputs?: PublicInputs;
+
+  /** Whether this is a mock proof */
+  isMock: boolean;
 }
 
 /**
@@ -50,14 +64,20 @@ export interface VerificationResult {
  * Configuration for proof generation
  */
 export interface ProverConfig {
-  /** Use mock prover (for testing) */
-  mock?: boolean;
+  /** Prover mode */
+  mode?: 'auto' | 'service' | 'mock';
 
-  /** Jolt Atlas prover endpoint (for remote proving) */
+  /** Jolt Atlas prover service endpoint */
   proverEndpoint?: string;
 
-  /** Local WASM prover path */
-  wasmProverPath?: string;
+  /** Model ID for the prover service */
+  modelId?: string;
+
+  /** API key for prover service */
+  apiKey?: string;
+
+  /** Timeout for prover requests (ms) */
+  timeout?: number;
 }
 
 /**
@@ -65,12 +85,50 @@ export interface ProverConfig {
  */
 export class ProofGenerator {
   private readonly config: ProverConfig;
+  private proverClient: ProverServiceClient | null = null;
+  private serviceAvailable: boolean | null = null;
 
   constructor(config: ProverConfig = {}) {
     this.config = {
-      mock: true, // Default to mock for Phase 1
+      mode: config.mode ?? 'auto',
+      proverEndpoint: config.proverEndpoint ?? process.env.JOLT_ATLAS_PROVER_URL,
+      timeout: config.timeout ?? 30000,
       ...config,
     };
+
+    // Initialize prover client if endpoint is configured
+    if (this.config.proverEndpoint && this.config.mode !== 'mock') {
+      this.proverClient = new ProverServiceClient({
+        endpoint: this.config.proverEndpoint,
+        apiKey: this.config.apiKey,
+        timeout: this.config.timeout,
+      });
+    }
+  }
+
+  /**
+   * Check if prover service is available
+   */
+  async checkServiceAvailability(): Promise<boolean> {
+    if (this.serviceAvailable !== null) {
+      return this.serviceAvailable;
+    }
+
+    if (!this.proverClient) {
+      this.serviceAvailable = false;
+      return false;
+    }
+
+    try {
+      await this.proverClient.healthCheck();
+      this.serviceAvailable = true;
+      console.log('[JoltAtlas] Prover service connected');
+    } catch {
+      this.serviceAvailable = false;
+      console.warn('[JoltAtlas] Prover service not available, using mock mode');
+    }
+
+    return this.serviceAvailable;
   }
 
   /**
@@ -84,29 +142,82 @@ export class ProofGenerator {
   ): Promise<ProofResult> {
     const startTime = Date.now();
 
-    // Compute input hash
+    // Compute hashes
     const inputHash = this.hashFeatures(features);
-
-    // Compute output hash
     const outputHash = this.hashOutput(decision, confidence);
 
-    if (this.config.mock) {
-      return this.generateMockProof(
+    // Determine whether to use real prover
+    const useService =
+      this.config.mode === 'service' ||
+      (this.config.mode === 'auto' && (await this.checkServiceAvailability()));
+
+    if (useService && this.proverClient && this.config.modelId) {
+      return this.generateRealProof(
         modelCommitment,
+        features,
+        decision,
+        confidence,
         inputHash,
         outputHash,
         startTime
       );
     }
 
-    // TODO: Integrate with actual Jolt Atlas prover
-    // For now, fall back to mock
-    return this.generateMockProof(
-      modelCommitment,
-      inputHash,
-      outputHash,
-      startTime
-    );
+    // Fall back to mock
+    return this.generateMockProof(modelCommitment, inputHash, outputHash, startTime);
+  }
+
+  /**
+   * Generate a real proof using the prover service
+   */
+  private async generateRealProof(
+    modelCommitment: string,
+    features: FeatureVector,
+    decision: PolicyDecision,
+    confidence: number,
+    inputHash: string,
+    outputHash: string,
+    startTime: number
+  ): Promise<ProofResult> {
+    if (!this.proverClient || !this.config.modelId) {
+      throw new Error('Prover client not configured');
+    }
+
+    try {
+      // Convert features to array
+      const inputArray = this.featureVectorToArray(features);
+
+      // Expected output based on decision
+      const expectedOutput = this.decisionToOutput(decision, confidence);
+
+      // Call prover service
+      const result = await this.proverClient.generateProof(
+        this.config.modelId,
+        inputArray,
+        expectedOutput
+      );
+
+      return {
+        proof: result.proof,
+        modelCommitment: result.modelCommitment,
+        inputHash: result.inputHash,
+        outputHash: result.outputHash,
+        provingTimeMs: result.provingTimeMs,
+        proofSizeBytes: Math.ceil((result.proof.length * 3) / 4), // Base64 to bytes estimate
+        publicInputs: result.publicInputs,
+        isMock: false,
+      };
+    } catch (error) {
+      console.error('[JoltAtlas] Real proof generation failed:', error);
+
+      // If in auto mode, fall back to mock
+      if (this.config.mode === 'auto') {
+        console.warn('[JoltAtlas] Falling back to mock proof');
+        return this.generateMockProof(modelCommitment, inputHash, outputHash, startTime);
+      }
+
+      throw error;
+    }
   }
 
   /**
@@ -115,12 +226,87 @@ export class ProofGenerator {
   async verifyProof(proof: ProofResult): Promise<VerificationResult> {
     const startTime = Date.now();
 
-    if (this.config.mock) {
+    // If it's a mock proof, use mock verification
+    if (proof.isMock) {
       return this.verifyMockProof(proof, startTime);
     }
 
-    // TODO: Integrate with actual Jolt Atlas verifier
-    return this.verifyMockProof(proof, startTime);
+    // Try real verification if service is available
+    const useService =
+      this.config.mode === 'service' ||
+      (this.config.mode === 'auto' && (await this.checkServiceAvailability()));
+
+    if (useService && this.proverClient) {
+      return this.verifyRealProof(proof, startTime);
+    }
+
+    // Fall back to commitment verification only
+    return this.verifyCommitmentsOnly(proof, startTime);
+  }
+
+  /**
+   * Verify using the prover service
+   */
+  private async verifyRealProof(
+    proof: ProofResult,
+    startTime: number
+  ): Promise<VerificationResult> {
+    if (!this.proverClient) {
+      throw new Error('Prover client not configured');
+    }
+
+    try {
+      const result = await this.proverClient.verifyProof(
+        proof.proof,
+        proof.modelCommitment,
+        proof.inputHash,
+        proof.outputHash,
+        proof.publicInputs
+      );
+
+      return {
+        valid: result.valid,
+        verificationTimeMs: result.verificationTimeMs,
+        error: result.error,
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        verificationTimeMs: Date.now() - startTime,
+        error: error instanceof Error ? error.message : 'Verification failed',
+      };
+    }
+  }
+
+  /**
+   * Verify commitments only (lightweight offchain verification)
+   */
+  private verifyCommitmentsOnly(
+    proof: ProofResult,
+    startTime: number
+  ): VerificationResult {
+    // For non-mock proofs without service, we can only verify the structure
+    // and commitments match what's in the proof
+
+    if (!proof.publicInputs) {
+      return {
+        valid: false,
+        verificationTimeMs: Date.now() - startTime,
+        error: 'Cannot verify: no public inputs and prover service unavailable',
+      };
+    }
+
+    // Verify public inputs match
+    const valid =
+      proof.publicInputs.modelCommitment === proof.modelCommitment &&
+      proof.publicInputs.inputHash === proof.inputHash &&
+      proof.publicInputs.outputHash === proof.outputHash;
+
+    return {
+      valid,
+      verificationTimeMs: Date.now() - startTime,
+      error: valid ? undefined : 'Public inputs mismatch',
+    };
   }
 
   /**
@@ -153,14 +339,34 @@ export class ProofGenerator {
   }
 
   /**
+   * Convert feature vector to array
+   */
+  private featureVectorToArray(features: FeatureVector): number[] {
+    const keys = Object.keys(features).sort();
+    return keys.map(k => {
+      const val = features[k];
+      return typeof val === 'boolean' ? (val ? 1 : 0) : Number(val);
+    });
+  }
+
+  /**
+   * Convert decision to model output format
+   */
+  private decisionToOutput(decision: PolicyDecision, confidence: number): number[] {
+    switch (decision) {
+      case 'approve':
+        return [1 - confidence, confidence];
+      case 'reject':
+        return [confidence, 1 - confidence];
+      case 'review':
+        return [0.33, 0.33, 0.34]; // Three-class output
+      default:
+        return [confidence];
+    }
+  }
+
+  /**
    * Generate a mock proof for testing
-   *
-   * This creates a proof-like structure that mimics the real Jolt Atlas output.
-   * The mock proof includes:
-   * - A header indicating mock proof
-   * - Model commitment
-   * - Input/output hashes
-   * - Random bytes to simulate proof data
    */
   private generateMockProof(
     modelCommitment: string,
@@ -168,20 +374,28 @@ export class ProofGenerator {
     outputHash: string,
     startTime: number
   ): ProofResult {
-    // Mock proof structure
+    // Create deterministic mock proof
+    const proofSeed = createHash('sha256')
+      .update(modelCommitment)
+      .update(inputHash)
+      .update(outputHash)
+      .digest();
+
     const proofData = {
       version: 1,
-      prover: 'jolt-atlas-mock',
+      prover: 'jolt-atlas-mock-v1',
       modelCommitment,
       inputHash,
       outputHash,
       timestamp: Date.now(),
-      // Random proof bytes (simulating actual ZK proof)
-      proofBytes: randomBytes(256).toString('hex'),
+      // Deterministic "proof" data
+      commitmentRandomness: proofSeed.slice(0, 16).toString('hex'),
+      sumcheckProof: proofSeed.slice(16, 32).toString('hex'),
+      lookupProof: createHash('sha256').update(proofSeed).update('lookup').digest('hex'),
     };
 
     const proofJson = JSON.stringify(proofData);
-    const proof = '0x' + Buffer.from(proofJson).toString('hex');
+    const proof = Buffer.from(proofJson).toString('base64');
 
     return {
       proof,
@@ -189,7 +403,8 @@ export class ProofGenerator {
       inputHash,
       outputHash,
       provingTimeMs: Date.now() - startTime,
-      proofSizeBytes: proof.length / 2 - 1, // hex to bytes
+      proofSizeBytes: proofJson.length,
+      isMock: true,
     };
   }
 
@@ -198,19 +413,15 @@ export class ProofGenerator {
    */
   private verifyMockProof(proof: ProofResult, startTime: number): VerificationResult {
     try {
-      // Decode and validate mock proof structure
-      const proofHex = proof.proof.startsWith('0x')
-        ? proof.proof.slice(2)
-        : proof.proof;
-      const proofJson = Buffer.from(proofHex, 'hex').toString('utf-8');
+      const proofJson = Buffer.from(proof.proof, 'base64').toString('utf-8');
       const proofData = JSON.parse(proofJson);
 
-      // Verify structure
-      if (proofData.prover !== 'jolt-atlas-mock') {
+      // Verify version and prover
+      if (proofData.version !== 1 || proofData.prover !== 'jolt-atlas-mock-v1') {
         return {
           valid: false,
           verificationTimeMs: Date.now() - startTime,
-          error: 'Invalid prover identifier',
+          error: 'Invalid mock proof version',
         };
       }
 
@@ -236,6 +447,32 @@ export class ProofGenerator {
           valid: false,
           verificationTimeMs: Date.now() - startTime,
           error: 'Output hash mismatch',
+        };
+      }
+
+      // Verify proof data is consistent (deterministic check)
+      const expectedSeed = createHash('sha256')
+        .update(proof.modelCommitment)
+        .update(proof.inputHash)
+        .update(proof.outputHash)
+        .digest();
+
+      const expectedCommitmentRandomness = expectedSeed.slice(0, 16).toString('hex');
+      const expectedSumcheck = expectedSeed.slice(16, 32).toString('hex');
+
+      if (proofData.commitmentRandomness !== expectedCommitmentRandomness) {
+        return {
+          valid: false,
+          verificationTimeMs: Date.now() - startTime,
+          error: 'Invalid proof: commitment randomness mismatch',
+        };
+      }
+
+      if (proofData.sumcheckProof !== expectedSumcheck) {
+        return {
+          valid: false,
+          verificationTimeMs: Date.now() - startTime,
+          error: 'Invalid proof: sumcheck mismatch',
         };
       }
 
@@ -267,3 +504,10 @@ export function getProofGenerator(config?: ProverConfig): ProofGenerator {
   }
   return defaultGenerator;
 }
+
+// Re-export prover client utilities
+export {
+  ProverServiceClient,
+  getProverServiceClient,
+  isProverServiceAvailable,
+} from './prover-client.js';

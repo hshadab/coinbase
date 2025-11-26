@@ -251,6 +251,62 @@ cd contracts
 forge script script/Deploy.s.sol --rpc-url base --broadcast
 ```
 
+## Prover Service Architecture
+
+For production use, the SDK connects to a **Jolt Atlas Prover Service** that handles ZK proof generation:
+
+```
+┌─────────────────────────────────────────┐
+│          TypeScript SDK                  │
+│   @jolt-atlas/agentkit-guardrails       │
+└───────────────────┬─────────────────────┘
+                    │ HTTP
+                    ▼
+┌─────────────────────────────────────────┐
+│      Jolt Atlas Prover Service          │
+│         (Rust / Docker)                  │
+│                                          │
+│  POST /prove    → ZK proof generation   │
+│  POST /verify   → Proof verification    │
+│  POST /models   → Register ONNX model   │
+└─────────────────────────────────────────┘
+```
+
+### Running the Prover Service
+
+```bash
+# With Docker
+cd prover-service
+docker-compose up -d
+
+# Or build and run directly
+cargo run --release
+```
+
+### Configuring the SDK
+
+```typescript
+import { ProofGenerator } from '@jolt-atlas/agentkit-guardrails';
+
+// Auto mode: uses prover service if available, falls back to mock
+const generator = new ProofGenerator({
+  mode: 'auto',
+  proverEndpoint: 'http://localhost:3001',
+  modelId: 'your-registered-model-id',
+});
+
+// Or via environment variable
+// JOLT_ATLAS_PROVER_URL=http://localhost:3001
+```
+
+### Prover Modes
+
+| Mode | Description |
+|------|-------------|
+| `auto` | Use prover service if available, fall back to mock |
+| `service` | Always use prover service (fail if unavailable) |
+| `mock` | Always use mock proofs (for development) |
+
 ## Project Structure
 
 ```
@@ -259,10 +315,17 @@ forge script script/Deploy.s.sol --rpc-url base --broadcast
 │       ├── src/
 │       │   ├── core/            # Types, guardrail wrapper
 │       │   ├── models/          # ONNX model loading
-│       │   ├── proof/           # Proof generation
+│       │   ├── proof/           # Proof generation + prover client
 │       │   ├── attestation/     # EIP-712 signing
 │       │   └── utils/           # Feature extractors
 │       └── tests/
+├── prover-service/              # Rust prover service
+│   ├── src/
+│   │   ├── main.rs             # HTTP API (Axum)
+│   │   ├── prover.rs           # Jolt Atlas integration
+│   │   └── types.rs            # API types
+│   ├── Dockerfile
+│   └── docker-compose.yml
 ├── contracts/
 │   └── src/
 │       └── GuardrailAttestationRegistry.sol
@@ -275,7 +338,7 @@ forge script script/Deploy.s.sol --rpc-url base --broadcast
 
 ## Roadmap
 
-### Phase 1 (Current)
+### Phase 1 ✅
 - [x] Core SDK with `withZkGuardrail` wrapper
 - [x] ONNX model inference
 - [x] Mock proof generation
@@ -283,15 +346,23 @@ forge script script/Deploy.s.sol --rpc-url base --broadcast
 - [x] Lightweight attestation registry contract
 - [x] Integration examples
 
+### Phase 1.5 ✅ (Current)
+- [x] Rust prover service with HTTP API
+- [x] TypeScript prover client
+- [x] Auto/service/mock prover modes
+- [x] Docker deployment
+- [x] Offchain proof verification
+
 ### Phase 2
-- [ ] Full Jolt Atlas ZK proof generation
-- [ ] Onchain proof verification
+- [ ] Real Jolt Atlas ZK proof integration
+- [ ] Onchain proof verification contract
 - [ ] ERC-8004 validation provider
-- [ ] Model marketplace
+- [ ] WASM verifier for browser
 
 ### Phase 3
 - [ ] x402 payment proof integration
 - [ ] Cross-chain attestations
+- [ ] Model marketplace
 - [ ] Reputation system
 
 ## Contributing
