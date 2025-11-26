@@ -118,7 +118,23 @@ export {
   type TrustRequirements,
   type Escrow,
   type EscrowConfig,
-  AgentStatus,
   PaymentStatus,
   EscrowStatus,
 } from './commerce/index.js';
+
+// Memory exports - Verifiable Agent Memory (Kinic + Base)
+export {
+  AgentMemory,
+  createAgentMemory,
+  StorageType,
+  OperationType,
+  KNOWLEDGE_DOMAINS,
+  type AgentMemoryConfig,
+  type MemoryStoreConfig,
+  type MemoryStore,
+  type MemoryEntry,
+  type InsertResult,
+  type SearchResult,
+  type KnowledgeCredential,
+  type MemoryIntegrityScore,
+} from './memory/index.js';

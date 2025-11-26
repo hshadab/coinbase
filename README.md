@@ -27,26 +27,28 @@ Jolt Atlas provides the infrastructure for **agentic commerce** on Coinbase:
 │                        JOLT ATLAS TRUST LAYER                           │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                │
-│   │   IDENTITY  │    │   VERIFY    │    │    PAY      │                │
-│   │   Registry  │    │   zkML      │    │   Rails     │                │
-│   └──────┬──────┘    └──────┬──────┘    └──────┬──────┘                │
-│          │                  │                  │                        │
-│          ▼                  ▼                  ▼                        │
-│   ┌─────────────────────────────────────────────────────┐              │
-│   │              AgentKit / CDP Wallet                   │              │
-│   └─────────────────────────────────────────────────────┘              │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
+│   │ IDENTITY │  │  VERIFY  │  │   PAY    │  │  MEMORY  │              │
+│   │ ERC-721  │  │   zkML   │  │  Rails   │  │  Kinic   │              │
+│   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘              │
+│        │             │             │             │                      │
+│        └─────────────┴─────────────┴─────────────┘                      │
+│                           │                                             │
+│              ┌────────────▼────────────┐                               │
+│              │  AgentKit / CDP Wallet  │                               │
+│              └─────────────────────────┘                               │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Three Pillars
+### Four Pillars
 
 | Pillar | What It Does | Why It Matters |
 |--------|--------------|----------------|
-| **Identity** | On-chain agent DIDs with reputation | Know who you're transacting with |
+| **Identity** | ERC-721 agent NFTs with reputation | Know who you're transacting with |
 | **Verify** | zkML proofs of policy compliance | Trust the math, not the operator |
 | **Pay** | Agent-to-agent payment rails | Enable autonomous commerce |
+| **Memory** | Kinic zkTAM + Base commitments | Verifiable agent knowledge |
 
 ## Quick Start
 
@@ -128,6 +130,37 @@ console.log(payment.txHash);              // Transaction hash
 console.log(payment.zkmlAttestationHash); // On-chain attestation
 ```
 
+### 4. Agent Memory (Kinic + Base)
+
+Store verifiable agent knowledge with zkML proofs:
+
+```typescript
+import { AgentMemory, StorageType } from '@jolt-atlas/agentkit-guardrails';
+
+const memory = new AgentMemory(signer, {
+  identityRegistryAddress: IDENTITY_REGISTRY,
+  memoryRegistryAddress: MEMORY_REGISTRY,
+  kinicServiceUrl: 'http://localhost:3002',
+  agentId: 42,
+});
+
+// Create memory store (uses Kinic on Internet Computer)
+await memory.createStore({
+  name: 'trading-knowledge',
+  description: 'Market analysis and strategies',
+  storageType: StorageType.InternetComputer,
+  useKinic: true,
+});
+
+// Insert memory with zkML embedding proof
+const result = await memory.insert('strategy', 'DeFi yield optimization...');
+console.log(result.zkProof);         // Kinic embedding proof
+console.log(result.attestationHash); // Base on-chain attestation
+
+// Sync commitment to Base (anchor IC state on-chain)
+const merkleRoot = await memory.syncCommitment();
+```
+
 ## Architecture
 
 ### On-Chain Contracts (ERC-8004 Compliant)
@@ -137,23 +170,26 @@ contracts/src/
 ├── erc8004/
 │   ├── IdentityRegistry.sol      # ERC-721 agent NFTs + zkML model commitments
 │   ├── ReputationRegistry.sol    # Feedback scoring (0-100) with authorization
-│   └── ValidationRegistry.sol    # zkML proof attestations + trust scores
+│   ├── ValidationRegistry.sol    # zkML proof attestations + trust scores
+│   └── MemoryRegistry.sol        # Kinic memory commitments + knowledge credentials
 ├── GuardrailAttestationRegistry.sol  # Legacy attestation storage
 └── (coming) AgentEscrow.sol      # zkML-gated escrow
 ```
 
-**ERC-8004 Three Registry Architecture:**
+**ERC-8004 Four Registry Architecture:**
 
 | Registry | Standard | zkML Extension |
 |----------|----------|----------------|
 | **IdentityRegistry** | ERC-721 NFT per agent | Model commitment tracking |
 | **ReputationRegistry** | Score 0-100 + tags | Feedback aggregation |
 | **ValidationRegistry** | Request/response flow | `postZkmlAttestation()`, `getZkmlTrustScore()` |
+| **MemoryRegistry** | Merkle commitments | Knowledge credentials, Kinic integration |
 
-The three registries enable:
+The four registries enable:
 - **Discovery** - Find agents by NFT ID or wallet address
 - **Reputation** - Feedback-based scoring with cryptographic authorization
 - **Validation** - zkML-verified trust with on-chain attestations
+- **Memory** - Verifiable agent knowledge with Merkle proofs
 
 ### TypeScript SDK
 
@@ -161,9 +197,19 @@ The three registries enable:
 packages/agentkit-guardrails/src/
 ├── core/           # withZkGuardrail wrapper
 ├── commerce/       # AgentPaymentRails for A2A
+├── memory/         # AgentMemory for Kinic + Base
 ├── proof/          # zkML proof generation
 ├── attestation/    # EIP-712 signing
 └── models/         # ONNX policy models
+```
+
+### Services
+
+```
+services/
+├── kinic-service/  # Python wrapper for Kinic zkTAM
+│   ├── main.py     # FastAPI endpoints (port 3002)
+│   └── Dockerfile
 ```
 
 ### Rust Prover Service
@@ -281,6 +327,13 @@ const treasuryAgent = withZkGuardrail(executeProposal, {
 - [x] ERC-8004 ValidationRegistry (zkML attestations)
 - [x] AgentPaymentRails with three-registry architecture
 - [x] zkML trust score aggregation
+
+### Phase 2.5 ✅ Complete
+- [x] MemoryRegistry for on-chain commitments
+- [x] Kinic zkTAM integration (Internet Computer)
+- [x] AgentMemory TypeScript SDK
+- [x] Knowledge credentials system
+- [x] Memory integrity scoring
 
 ### Phase 3 (Next)
 - [ ] On-chain zkML verification

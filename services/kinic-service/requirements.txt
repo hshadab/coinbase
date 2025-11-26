@@ -1,0 +1,12 @@
+# Kinic Memory Service Dependencies
+
+# Web framework
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Kinic SDK (requires dfx + KINIC tokens for full functionality)
+kinic-py>=0.1.0
+
+# Utilities
+pydantic>=2.0.0
+python-dotenv>=1.0.0
