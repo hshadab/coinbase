@@ -5,6 +5,11 @@
 /models/*.onnx
 /models/*.bin
 
+# Jolt Atlas large binaries (400MB+)
+/jolt-atlas/bin/
+# SRS cache (generated on first run)
+/jolt-atlas/*.srs
+
 # IDE
 .idea/
 .vscode/

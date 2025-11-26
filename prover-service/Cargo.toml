@@ -9,9 +9,8 @@ license = "MIT"
 default = ["mock-prover"]
 # Use mock prover (for development without Jolt Atlas)
 mock-prover = []
-# Use real Jolt Atlas prover (requires jolt-atlas crate)
-# Enable when jolt dependencies are uncommented:
-# real-prover = ["jolt-sdk", "ark-bn254", "ark-serialize"]
+# Use real Jolt Atlas prover (calls authorization_json binary)
+real-prover = []
 
 [dependencies]
 # Web framework
