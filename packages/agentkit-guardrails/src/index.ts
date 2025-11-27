@@ -43,7 +43,7 @@ export {
   Guardrail,
 } from './core/guardrail.js';
 
-export {
+export type {
   PolicyDecision,
   GuardrailConfig,
   GuardrailResult,
@@ -56,8 +56,9 @@ export {
   AttestationData,
   FeatureVector,
   FeatureExtractor,
-  GuardrailBlockedError,
 } from './core/types.js';
+
+export { GuardrailBlockedError } from './core/types.js';
 
 // Model exports
 export {

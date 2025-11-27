@@ -47,9 +47,9 @@ pip install fastapi uvicorn pydantic python-dotenv
 python main.py
 ```
 
-### Option 2: Production Mode
+### Option 2: Production Mode (Desktop Environment)
 
-Requires KINIC tokens for on-chain vector storage:
+Requires KINIC tokens and a desktop environment with D-Bus/keyring:
 
 ```bash
 # 1. Setup identity
@@ -59,11 +59,14 @@ Requires KINIC tokens for on-chain vector storage:
 #    Get tokens from: https://kinic.io
 
 # 3. Install dependencies
-pip install -r requirements.txt
+pip install git+https://github.com/ICME-Lab/kinic-cli.git
+pip install fastapi uvicorn pydantic python-dotenv
 
-# 4. Start service
-python main.py
+# 4. Start service (requires D-Bus for keyring)
+KINIC_USE_IC=true python main.py
 ```
+
+**Note:** The kinic-py SDK requires a desktop environment with D-Bus/keyring support for secure key storage. On headless servers, the service automatically falls back to mock mode.
 
 ## API Reference
 

@@ -3,10 +3,10 @@
  * Handles ONNX model loading and inference
  */
 
-import type {
-  PolicyModelConfig,
-  FeatureVector,
+import {
   PolicyDecision,
+  type PolicyModelConfig,
+  type FeatureVector,
 } from '../core/types.js';
 
 /**
@@ -149,7 +149,7 @@ export class PolicyModel {
       // Binary classification (sigmoid output)
       const score = output[0];
       return {
-        decision: score >= threshold ? 'approve' : 'reject',
+        decision: score >= threshold ? PolicyDecision.APPROVE : PolicyDecision.REJECT,
         confidence: score >= threshold ? score : 1 - score,
         rawOutput: output,
       };
@@ -158,7 +158,7 @@ export class PolicyModel {
     if (output.length === 2) {
       // Binary classification (softmax output)
       const [rejectScore, approveScore] = output;
-      const decision = approveScore > rejectScore ? 'approve' : 'reject';
+      const decision = approveScore > rejectScore ? PolicyDecision.APPROVE : PolicyDecision.REJECT;
       return {
         decision,
         confidence: Math.max(approveScore, rejectScore),
@@ -171,9 +171,9 @@ export class PolicyModel {
       const [rejectScore, reviewScore, approveScore] = output;
       const maxScore = Math.max(rejectScore, reviewScore, approveScore);
       let decision: PolicyDecision;
-      if (maxScore === approveScore) decision = 'approve';
-      else if (maxScore === reviewScore) decision = 'review';
-      else decision = 'reject';
+      if (maxScore === approveScore) decision = PolicyDecision.APPROVE;
+      else if (maxScore === reviewScore) decision = PolicyDecision.REVIEW;
+      else decision = PolicyDecision.REJECT;
 
       return {
         decision,
@@ -184,7 +184,7 @@ export class PolicyModel {
 
     // Fallback: treat first output as approval score
     return {
-      decision: output[0] >= threshold ? 'approve' : 'reject',
+      decision: output[0] >= threshold ? PolicyDecision.APPROVE : PolicyDecision.REJECT,
       confidence: Math.abs(output[0] - 0.5) * 2,
       rawOutput: output,
     };
@@ -219,7 +219,7 @@ export class PolicyModel {
     const threshold = this.config.threshold ?? 0.5;
 
     return {
-      decision: approveScore >= threshold ? 'approve' : 'reject',
+      decision: approveScore >= threshold ? PolicyDecision.APPROVE : PolicyDecision.REJECT,
       confidence: approveScore >= threshold ? approveScore : 1 - approveScore,
       rawOutput: [approveScore],
     };

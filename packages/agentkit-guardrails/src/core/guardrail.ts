@@ -5,15 +5,15 @@
  * Wraps any action with policy model inference, proof generation, and attestation.
  */
 
-import type {
-  GuardrailConfig,
-  GuardrailResult,
-  GuardrailedActionResult,
-  ActionContext,
-  WalletContext,
+import {
   PolicyDecision,
-  SignedAttestation,
   GuardrailBlockedError,
+  type GuardrailConfig,
+  type GuardrailResult,
+  type GuardrailedActionResult,
+  type ActionContext,
+  type WalletContext,
+  type SignedAttestation,
 } from './types.js';
 import { PolicyModel, getPolicyModel } from '../models/policy-model.js';
 import { ProofGenerator, getProofGenerator } from '../proof/proof-generator.js';
@@ -88,7 +88,7 @@ export class Guardrail {
 
         if (this.config.onProofFail === 'reject') {
           return {
-            decision: 'reject',
+            decision: PolicyDecision.REJECT,
             confidence: 0,
             modelCommitment,
             inputHash: '',

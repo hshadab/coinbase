@@ -6,3 +6,9 @@ contracts/cache/
 contracts/out/
 contracts/lib/forge-std/
 contracts/broadcast/
+
+# Node.js
+node_modules/
+dist/
+*.log
+pnpm-lock.yaml

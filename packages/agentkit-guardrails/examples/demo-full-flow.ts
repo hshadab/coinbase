@@ -50,8 +50,8 @@ async function main() {
   console.log("Wallet:", wallet.address);
 
   // Check prover service
-  const proverClient = getProverServiceClient({ baseUrl: PROVER_URL });
-  const proverHealth = await proverClient.health().catch(() => null);
+  const proverClient = getProverServiceClient({ endpoint: PROVER_URL });
+  const proverHealth = await proverClient.healthCheck().catch(() => null);
   console.log(
     "Prover service:",
     proverHealth ? "available" : "unavailable (mock mode)"
