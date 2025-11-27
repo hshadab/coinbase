@@ -48,7 +48,7 @@ Jolt Atlas provides the infrastructure for **agentic commerce** on Coinbase:
 | **Identity** | ERC-721 agent NFTs with reputation | Know who you're transacting with |
 | **Verify** | zkML proofs of policy compliance | Trust the math, not the operator |
 | **Pay** | Agent-to-agent payment rails | Enable autonomous commerce |
-| **Memory** | Kinic zkTAM + Base commitments | Verifiable agent knowledge |
+| **Memory** | Kinic AI Memory + Base commitments | Verifiable agent knowledge |
 
 ## Quick Start
 
@@ -130,9 +130,9 @@ console.log(payment.txHash);              // Transaction hash
 console.log(payment.zkmlAttestationHash); // On-chain attestation
 ```
 
-### 4. Agent Memory (Kinic + Base)
+### 4. Agent Memory (Kinic AI Memory)
 
-Store verifiable agent knowledge with zkML proofs:
+Store verifiable agent knowledge in an on-chain vector database:
 
 ```typescript
 import { AgentMemory, StorageType } from '@jolt-atlas/agentkit-guardrails';
@@ -144,11 +144,11 @@ const memory = new AgentMemory(signer, {
   agentId: 42,
 });
 
-// Create memory store (uses Kinic on Internet Computer)
+// Create on-chain vector database for agent
 await memory.createStore({
   name: 'trading-knowledge',
   description: 'Market analysis and strategies',
-  storageType: StorageType.InternetComputer,
+  storageType: StorageType.OnChainVector,
   useKinic: true,
 });
 
@@ -157,7 +157,7 @@ const result = await memory.insert('strategy', 'DeFi yield optimization...');
 console.log(result.zkProof);         // Kinic embedding proof
 console.log(result.attestationHash); // Base on-chain attestation
 
-// Sync commitment to Base (anchor IC state on-chain)
+// Sync commitment to Base
 const merkleRoot = await memory.syncCommitment();
 ```
 
@@ -171,7 +171,7 @@ contracts/src/
 │   ├── IdentityRegistry.sol      # ERC-721 agent NFTs + zkML model commitments
 │   ├── ReputationRegistry.sol    # Feedback scoring (0-100) with authorization
 │   ├── ValidationRegistry.sol    # zkML proof attestations + trust scores
-│   └── MemoryRegistry.sol        # Kinic memory commitments + knowledge credentials
+│   └── MemoryRegistry.sol        # On-chain vector DB commitments + knowledge credentials
 ├── GuardrailAttestationRegistry.sol  # Legacy attestation storage
 └── (coming) AgentEscrow.sol      # zkML-gated escrow
 ```
@@ -183,7 +183,7 @@ contracts/src/
 | **IdentityRegistry** | ERC-721 NFT per agent | Model commitment tracking |
 | **ReputationRegistry** | Score 0-100 + tags | Feedback aggregation |
 | **ValidationRegistry** | Request/response flow | `postZkmlAttestation()`, `getZkmlTrustScore()` |
-| **MemoryRegistry** | Merkle commitments | Knowledge credentials, Kinic integration |
+| **MemoryRegistry** | Merkle commitments | Knowledge credentials, on-chain vector DB |
 
 The four registries enable:
 - **Discovery** - Find agents by NFT ID or wallet address
@@ -207,7 +207,7 @@ packages/agentkit-guardrails/src/
 
 ```
 services/
-├── kinic-service/  # Python wrapper for Kinic zkTAM
+├── kinic-service/  # Kinic AI Memory - On-chain vector database
 │   ├── main.py     # FastAPI endpoints (port 3002)
 │   └── Dockerfile
 ```
@@ -330,7 +330,7 @@ const treasuryAgent = withZkGuardrail(executeProposal, {
 
 ### Phase 2.5 ✅ Complete
 - [x] MemoryRegistry for on-chain commitments
-- [x] Kinic zkTAM integration (Internet Computer)
+- [x] Kinic AI Memory integration (on-chain vector database)
 - [x] AgentMemory TypeScript SDK
 - [x] Knowledge credentials system
 - [x] Memory integrity scoring

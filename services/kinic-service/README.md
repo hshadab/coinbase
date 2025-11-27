@@ -1,168 +1,156 @@
-# Kinic Memory Service
+# Kinic AI Memory Service
 
-HTTP API wrapper for [Kinic zkTAM](https://kinic.io) (Trustless Agentic Memory) on the Internet Computer.
+On-chain vector database for Coinbase AgentKit agents. Provides verifiable, tamper-proof memory storage with zkML embedding proofs.
+
+## What is Kinic AI Memory?
+
+Kinic provides an **on-chain vector database** that gives AI agents:
+- **Verifiable memory** - All embeddings are cryptographically proven
+- **Tamper-proof storage** - Immutable, decentralized storage
+- **Semantic search** - Query agent knowledge with natural language
+- **Trust anchoring** - Merkle roots anchored on Base for verification
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    KINIC + BASE HYBRID                       │
+│                 KINIC AI MEMORY + BASE                       │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   AgentMemory SDK          Kinic Service                    │
-│   (TypeScript)      ───▶   (Python:3002)                    │
-│                                  │                          │
-│                                  ▼                          │
-│                            ┌──────────┐                     │
-│                            │ kinic-py │                     │
-│                            └────┬─────┘                     │
-│                                 │                           │
-│            ┌────────────────────┴────────────────────┐      │
-│            ▼                                         ▼      │
-│   ┌─────────────────┐                     ┌──────────────┐  │
-│   │  Base Sepolia   │                     │ IC Canisters │  │
-│   │  (Commitments)  │ ◀─── Merkle Root ───│ (zkTAM Data) │  │
-│   └─────────────────┘                     └──────────────┘  │
+│   AgentKit SDK           Kinic Memory Service               │
+│   (TypeScript)    ───▶   (Python:3002)                      │
+│                                │                            │
+│                                ▼                            │
+│                        ┌──────────────┐                     │
+│                        │ On-chain     │                     │
+│                        │ Vector DB    │                     │
+│                        └──────┬───────┘                     │
+│                               │                             │
+│         ┌─────────────────────┴─────────────────────┐       │
+│         ▼                                           ▼       │
+│   ┌───────────────┐                      ┌──────────────┐   │
+│   │ Base Sepolia  │                      │ Kinic zkTAM  │   │
+│   │ (Commitments) │ ◀── Merkle Root ──── │ (Embeddings) │   │
+│   └───────────────┘                      └──────────────┘   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
 
-### Option 1: Mock Mode (No Setup)
+### Option 1: Mock Mode (Development)
 
-Just run without installing kinic-py:
+No tokens needed - uses in-memory storage:
 
 ```bash
 pip install fastapi uvicorn pydantic python-dotenv
 python main.py
 ```
 
-Service runs with in-memory mock storage. Good for development.
+### Option 2: Production Mode
 
-### Option 2: Local IC Replica (Free Testing)
-
-```bash
-# Interactive setup
-chmod +x setup-icp.sh
-./setup-icp.sh --local
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start local replica (in another terminal)
-dfx start --background
-
-# Start service
-python main.py
-```
-
-### Option 3: IC Mainnet (Production)
-
-**Requires KINIC tokens** from https://kinic.io
+Requires KINIC tokens for on-chain vector storage:
 
 ```bash
-# Setup for mainnet
+# 1. Setup identity
 ./setup-icp.sh --mainnet
 
-# Install dependencies
+# 2. Fund your principal with KINIC tokens
+#    Get tokens from: https://kinic.io
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# Start service
+# 4. Start service
 python main.py
 ```
 
-## KINIC Token Requirements
-
-| Feature | Tokens Needed |
-|---------|---------------|
-| Create memory canister | ~1 KINIC |
-| Insert memory (with zkML) | ~0.01 KINIC |
-| Search memories | ~0.001 KINIC |
-
-**Kinic handles ICP cycles for you** - you just pay in KINIC tokens.
-
-Get tokens: https://kinic.io
-
-## API Endpoints
+## API Reference
 
 ### Health Check
-```
+```http
 GET /health
 ```
+Returns service status and whether on-chain storage is available.
 
 ### Create Memory Store
-```
+```http
 POST /memories
+Content-Type: application/json
+
 {
   "name": "agent-knowledge",
-  "description": "Trading strategies",
-  "identity": "jolt-atlas",
-  "use_ic": true
+  "description": "Trading strategies and market analysis"
 }
 ```
+Creates a new on-chain vector database for an agent.
 
 ### Insert Memory
-```
+```http
 POST /memories/{memory_id}/insert
+Content-Type: application/json
+
 {
   "tag": "strategy",
-  "content": "Buy low, sell high..."
+  "content": "DeFi yield optimization: Focus on stable pools with >5% APY..."
 }
 ```
-
-Returns zkML embedding proof.
+Stores content with zkML-verified embeddings. Returns proof hash.
 
 ### Search Memories
-```
+```http
 POST /memories/{memory_id}/search
+Content-Type: application/json
+
 {
-  "query": "trading strategy",
+  "query": "yield optimization strategy",
   "limit": 5
 }
 ```
-
-Semantic similarity search with zkML-verified embeddings.
+Semantic similarity search across agent knowledge.
 
 ### Get Commitment
-```
+```http
 GET /memories/{memory_id}/commitment
 ```
+Returns current Merkle root for on-chain verification.
 
-Returns Merkle root for on-chain anchoring.
+## Integration with Base
+
+The TypeScript SDK (`AgentMemory`) coordinates between Kinic and Base:
+
+1. **Store**: Content → Kinic → zkML embedding → On-chain vector DB
+2. **Anchor**: Merkle root → Base MemoryRegistry contract
+3. **Verify**: Query Kinic proof → Verify against Base commitment
+
+This enables **trustless agent memory**:
+- Data stored in decentralized vector database
+- Commitments anchored on Base (verifiable)
+- zkML proofs guarantee embedding correctness
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | 3002 | Service port |
-| `KINIC_IDENTITY` | default | dfx identity name |
-| `KINIC_USE_IC` | true | Use IC mainnet (false = local replica) |
+| `KINIC_IDENTITY` | jolt-atlas | Identity name for on-chain ops |
+| `KINIC_USE_IC` | true | Enable on-chain storage |
 
-## Integration with Base
+## Token Requirements
 
-The TypeScript SDK (`AgentMemory`) coordinates:
-
-1. **Insert flow:**
-   - Content → Kinic service → zkTAM canister
-   - Get Merkle root → Post attestation to Base MemoryRegistry
-
-2. **Verification flow:**
-   - Query Kinic for Merkle proof
-   - Verify against Base MemoryRegistry commitment
-
-This provides **trustless agent memory**:
-- Data stored on Internet Computer (decentralized)
-- Commitments anchored on Base (verifiable)
-- zkML proofs for embedding correctness
+| Operation | KINIC Cost |
+|-----------|------------|
+| Create memory store | ~1 KINIC |
+| Insert memory | ~0.01 KINIC |
+| Search | ~0.001 KINIC |
 
 ## Docker
 
 ```bash
-docker build -t kinic-service .
-docker run -p 3002:3002 -e KINIC_USE_IC=false kinic-service
+docker build -t kinic-memory .
+docker run -p 3002:3002 -e KINIC_USE_IC=true kinic-memory
 ```
 
 ## License
 
-MIT
+MIT - Built for Coinbase AgentKit

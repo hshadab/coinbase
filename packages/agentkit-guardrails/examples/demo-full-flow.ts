@@ -24,13 +24,13 @@ import {
   type TrustRequirements,
 } from "../src/index.js";
 
-// Contract addresses (update after deployment)
+// Contract addresses (Base Sepolia - Deployed)
 const CONTRACTS = {
-  IDENTITY_REGISTRY: "0x...", // Update after deploy
-  REPUTATION_REGISTRY: "0x...",
-  VALIDATION_REGISTRY: "0x...",
-  MEMORY_REGISTRY: "0x...",
-  AGENT_ESCROW: "0x...",
+  IDENTITY_REGISTRY: "0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f",
+  REPUTATION_REGISTRY: "0xaEf4e79A1f51F48b5E5206cBCc32fFe6549edd7E",
+  VALIDATION_REGISTRY: "0x15957085f167f181B55Dc2cae3eE019D427C9778",
+  MEMORY_REGISTRY: "0x525D0c8908939303CD7ebEEf5A350EC5b6764451",
+  AGENT_ESCROW: "0xaB33273c46E0cD2377065815ebBA5231be671670",
 };
 
 // Configuration
@@ -160,9 +160,9 @@ async function main() {
   }
 
   // ========================================
-  // STEP 4: Agent Memory
+  // STEP 4: Kinic AI Memory (On-Chain Vector DB)
   // ========================================
-  console.log("\n--- Step 4: Agent Memory ---");
+  console.log("\n--- Step 4: Kinic AI Memory ---");
 
   const memory = new AgentMemory(wallet, {
     identityRegistryAddress: CONTRACTS.IDENTITY_REGISTRY,
@@ -171,7 +171,7 @@ async function main() {
     agentId: 1,
   });
 
-  // Create memory store
+  // Create on-chain vector database for agent
   try {
     await memory.createStore({
       name: "trading-knowledge",
@@ -179,7 +179,7 @@ async function main() {
       storageType: StorageType.InternetComputer,
       useKinic: true,
     });
-    console.log("  Created memory store: trading-knowledge");
+    console.log("  Created on-chain vector DB: trading-knowledge");
   } catch (error) {
     console.log("  Memory store demo (Kinic service not running)");
   }
@@ -205,12 +205,9 @@ async function main() {
   console.log("  - ERC-8004 agent identity (NFT-based)");
   console.log("  - zkML guardrails for action verification");
   console.log("  - Agent-to-agent payments with trust requirements");
-  console.log("  - Verifiable agent memory with Kinic");
-  console.log("\nNext steps:");
-  console.log("  1. Deploy contracts to Base Sepolia");
-  console.log("  2. Fund wallet with testnet ETH");
-  console.log("  3. Run prover service (cargo run)");
-  console.log("  4. Execute this demo with real contracts");
+  console.log("  - Kinic AI Memory (on-chain vector database)");
+  console.log("\nContracts deployed on Base Sepolia!");
+  console.log("Run Kinic service: cd services/kinic-service && python main.py");
 }
 
 // Escrow Demo (separate flow)
