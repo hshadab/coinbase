@@ -354,6 +354,7 @@ const treasuryAgent = withZkGuardrail(executeProposal, {
 - Node.js 18+
 - Rust (for prover service)
 - Foundry (for contracts)
+- For Kinic Memory: Linux environment (native, WSL, or VM)
 
 ### Installation
 
@@ -374,6 +375,42 @@ cargo build --release --features real-prover
 cd ../contracts
 forge build
 ```
+
+### Windows Setup (for Kinic AI Memory)
+
+Kinic requires a Linux environment. On Windows, use Multipass for a lightweight Ubuntu VM:
+
+```powershell
+# Install Multipass
+winget install Canonical.Multipass
+
+# Restart PowerShell, then create VM
+multipass launch --name kinic --cpus 1 --memory 2G --disk 10G --timeout 600
+
+# Access the VM
+multipass shell kinic
+```
+
+Inside the VM:
+
+```bash
+# Install dfx with PLAINTEXT identity (no keyring required)
+curl -fsSL https://internetcomputer.org/install.sh | sh
+source ~/.bashrc
+dfx identity new jolt-atlas --storage-mode=plaintext
+dfx identity use jolt-atlas
+dfx identity get-principal  # Your KINIC token address
+
+# Install Rust and kinic-py
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source ~/.cargo/env
+pip install git+https://github.com/ICME-Lab/kinic-cli.git --break-system-packages
+
+# Test
+python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print('SUCCESS')"
+```
+
+**Key insight:** The `--storage-mode=plaintext` flag stores identity keys in `~/.config/dfx/identity/` as PEM files instead of the system keyring, eliminating the need for D-Bus/gnome-keyring.
 
 ### Run the Prover Service
 

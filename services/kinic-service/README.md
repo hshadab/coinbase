@@ -47,12 +47,83 @@ pip install fastapi uvicorn pydantic python-dotenv
 python main.py
 ```
 
-### Option 2: Production Mode (Desktop Environment)
+### Option 2: Production Mode with Plaintext Identity (Recommended)
 
-Requires KINIC tokens and a desktop environment with D-Bus/keyring:
+Uses file-based identity storage - **no keyring/D-Bus required**. Works on any Linux environment including WSL, VMs, and servers.
 
 ```bash
-# 1. Setup identity
+# 1. Install dfx (Internet Computer SDK)
+curl -fsSL https://internetcomputer.org/install.sh | sh
+source ~/.bashrc
+
+# 2. Create identity with PLAINTEXT storage (key stored in ~/.config/dfx/identity/)
+dfx identity new jolt-atlas --storage-mode=plaintext
+dfx identity use jolt-atlas
+
+# 3. Get your principal (send KINIC tokens here)
+dfx identity get-principal
+
+# 4. Install Rust (required for kinic-py)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source ~/.cargo/env
+
+# 5. Install kinic-py
+pip install git+https://github.com/ICME-Lab/kinic-cli.git
+
+# 6. Test the connection
+python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print('SUCCESS')"
+
+# 7. Start the service
+KINIC_USE_IC=true KINIC_IDENTITY=jolt-atlas python main.py
+```
+
+**Key insight:** The `--storage-mode=plaintext` flag stores your identity's private key in a PEM file at `~/.config/dfx/identity/<name>/identity.pem` instead of the system keyring. This eliminates the need for D-Bus, gnome-keyring, or a desktop environment.
+
+### Option 3: Windows Setup with Multipass
+
+For Windows users, use Multipass to run an Ubuntu VM with full Kinic support:
+
+```powershell
+# 1. Install Multipass (in PowerShell as Admin)
+winget install Canonical.Multipass
+
+# 2. Restart PowerShell, then create Ubuntu VM
+multipass launch --name kinic --cpus 1 --memory 2G --disk 10G --timeout 600
+
+# 3. Access the VM
+multipass shell kinic
+```
+
+Inside the VM, run the setup:
+
+```bash
+# Install dependencies
+sudo apt update && sudo apt install -y python3-pip curl
+
+# Install dfx
+curl -fsSL https://internetcomputer.org/install.sh | sh
+source ~/.bashrc
+
+# Create identity with plaintext storage
+dfx identity new jolt-atlas --storage-mode=plaintext
+dfx identity use jolt-atlas
+dfx identity get-principal  # Send KINIC tokens to this address
+
+# Install Rust and kinic-py
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source ~/.cargo/env
+pip install git+https://github.com/ICME-Lab/kinic-cli.git --break-system-packages
+
+# Test
+python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print('SUCCESS')"
+```
+
+### Option 4: Production Mode with Keyring (Desktop Only)
+
+For desktop Linux environments with full keyring support:
+
+```bash
+# 1. Setup identity (uses system keyring)
 ./setup-icp.sh --mainnet
 
 # 2. Fund your principal with KINIC tokens
@@ -62,11 +133,20 @@ Requires KINIC tokens and a desktop environment with D-Bus/keyring:
 pip install git+https://github.com/ICME-Lab/kinic-cli.git
 pip install fastapi uvicorn pydantic python-dotenv
 
-# 4. Start service (requires D-Bus for keyring)
+# 4. Start service
 KINIC_USE_IC=true python main.py
 ```
 
-**Note:** The kinic-py SDK requires a desktop environment with D-Bus/keyring support for secure key storage. On headless servers, the service automatically falls back to mock mode.
+**Note:** This option requires a desktop environment with D-Bus/gnome-keyring. On headless servers or WSL, use Option 2 (plaintext identity) instead.
+
+## Identity Storage Modes
+
+| Mode | Storage Location | Requirements | Use Case |
+|------|------------------|--------------|----------|
+| **Plaintext** | `~/.config/dfx/identity/<name>/identity.pem` | None | Servers, WSL, VMs, CI/CD |
+| **Keyring** | System keyring (gnome-keyring) | D-Bus, desktop environment | Desktop Linux with GUI |
+
+**Security Note:** Plaintext mode stores the private key in a file. Ensure proper file permissions (`chmod 600`) and do not use for high-value accounts. For production with significant funds, use a hardware wallet or HSM.
 
 ## API Reference
 
