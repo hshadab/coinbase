@@ -79,7 +79,7 @@ KINIC_USE_IC=true KINIC_IDENTITY=jolt-atlas python main.py
 
 **Key insight:** The `--storage-mode=plaintext` flag stores your identity's private key in a PEM file at `~/.config/dfx/identity/<name>/identity.pem` instead of the system keyring. This eliminates the need for D-Bus, gnome-keyring, or a desktop environment.
 
-### Option 3: Windows Setup with Multipass
+### Option 3: Windows Setup with Multipass (Verified Working)
 
 For Windows users, use Multipass to run an Ubuntu VM with full Kinic support:
 
@@ -94,11 +94,15 @@ multipass launch --name kinic --cpus 1 --memory 2G --disk 10G --timeout 600
 multipass shell kinic
 ```
 
-Inside the VM, run the setup:
+Inside the VM, run the complete setup:
 
 ```bash
 # Install dependencies
-sudo apt update && sudo apt install -y python3-pip curl
+sudo apt update && sudo apt install -y python3-pip curl gnome-keyring dbus-x11 libsecret-tools
+
+# Start D-Bus and keyring
+eval $(dbus-launch --sh-syntax)
+echo "" | gnome-keyring-daemon --unlock --components=secrets
 
 # Install dfx
 curl -fsSL https://internetcomputer.org/install.sh | sh
@@ -109,14 +113,28 @@ dfx identity new jolt-atlas --storage-mode=plaintext
 dfx identity use jolt-atlas
 dfx identity get-principal  # Send KINIC tokens to this address
 
-# Install Rust and kinic-py
+# Install Rust (required for kinic-py compilation)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source ~/.cargo/env
+
+# Install kinic-py (takes ~15-20 min to compile)
 pip install git+https://github.com/ICME-Lab/kinic-cli.git --break-system-packages
 
-# Test
+# CRITICAL: Store identity in keyring with correct format
+# Kinic expects hex-encoded PEM with specific service/username attributes
+cat ~/.config/dfx/identity/jolt-atlas/identity.pem | xxd -p | tr -d '\n' | \
+  secret-tool store --label="ic:jolt-atlas" \
+    service internet_computer_identities \
+    username internet_computer_identity_jolt-atlas
+
+# Test CLI
+~/.cargo/bin/kinic-cli --identity jolt-atlas --ic list
+
+# Test Python API
 python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print('SUCCESS')"
 ```
+
+**Tested and verified:** Creates on-chain memory canisters, inserts data, and performs semantic search.
 
 ### Option 4: Production Mode with Keyring (Desktop Only)
 
