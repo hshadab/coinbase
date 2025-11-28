@@ -1,35 +1,43 @@
 /**
- * @jolt-atlas/agentkit-guardrails
+ * @trustless-agentkit/sdk
  *
- * zkML guardrails for Coinbase AgentKit - cryptographic proof that your agent
- * ran the policy it claimed, before it moves money onchain.
+ * Trustless AgentKit - Verifiable Compute (zkML) + Verifiable Memory (Kinic)
+ * for Coinbase AgentKit. Make your agents trustless.
+ *
+ * Two Pillars:
+ * - **Verifiable Compute**: zkML proofs that agent ran its policy (Jolt Atlas)
+ * - **Verifiable Memory**: On-chain vector DB with zkML embeddings (Kinic)
  *
  * @example
  * ```typescript
- * import { withZkGuardrail } from '@jolt-atlas/agentkit-guardrails';
- * import { AgentKit } from '@coinbase/agentkit';
+ * import {
+ *   createMarketplace,
+ *   withZkGuardrail,
+ *   AgentMemory,
+ *   StorageType,
+ * } from '@trustless-agentkit/sdk';
  *
- * const agent = await AgentKit.from({ walletProvider: cdpWallet });
- *
- * // Wrap any action with zkML guardrails
- * const guardrailedTransfer = withZkGuardrail(
- *   agent.getAction('transfer'),
- *   {
- *     policyModel: './models/tx-authorization.onnx',
- *     proofMode: 'always',
- *     onModelReject: 'block',
- *   }
- * );
- *
- * // Action is now protected - no proof, no tx
- * const result = await guardrailedTransfer({
- *   to: '0x...',
- *   amount: '100',
- *   asset: 'USDC',
+ * // Setup marketplace with verifiable compute + memory
+ * const marketplace = createMarketplace(signer, {
+ *   erc8004: { identityRegistry, reputationRegistry, validationRegistry },
+ *   x402: { network: 'base-sepolia' },
  * });
  *
- * console.log(result.guardrail.decision); // 'approve'
- * console.log(result.guardrail.proof);    // '0x...'
+ * // Discover agents via Kinic semantic search
+ * const providers = await marketplace.discoverAgents({
+ *   query: 'data analysis with ML',
+ *   minTrustScore: 70,
+ * });
+ *
+ * // Execute with x402 payment + zkML proof
+ * const result = await marketplace.executeService(providers[0].agentId, {
+ *   serviceType: 'data-analysis',
+ *   payload: { data: [...] },
+ * }, { requireProof: true });
+ *
+ * console.log(result.result);          // Service result
+ * console.log(result.proof);           // zkML proof
+ * console.log(result.attestationHash); // On-chain record
  * ```
  *
  * @packageDocumentation

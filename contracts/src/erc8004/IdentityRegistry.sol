@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title IdentityRegistry (ERC-8004 Compliant)
- * @author Jolt Atlas + Coinbase AgentKit
+ * @author Trustless AgentKit
  * @notice ERC-721 based agent identity registry per ERC-8004 standard
- * @dev Extends the base ERC-8004 IdentityRegistry with zkML model commitment tracking
+ * @dev Part of Trustless AgentKit - extends ERC-8004 IdentityRegistry with zkML model commitment tracking
  *
  * Key Features:
  * - NFT-based agent identity (each agent = 1 NFT)

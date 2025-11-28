@@ -1,8 +1,8 @@
 {
-  "name": "jolt-atlas-agentkit",
+  "name": "trustless-agentkit",
   "version": "0.1.0",
   "private": true,
-  "description": "Jolt Atlas zkML Guardrails for Coinbase AgentKit",
+  "description": "Trustless AgentKit - Verifiable Compute (zkML) + Verifiable Memory (Kinic) for Coinbase AgentKit",
   "workspaces": [
     "packages/*",
     "examples/*"
