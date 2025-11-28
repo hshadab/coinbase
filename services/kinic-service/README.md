@@ -38,6 +38,18 @@ Kinic provides an **on-chain vector database** on the Internet Computer that giv
 
 ## Quick Start
 
+### Platform Requirements
+
+Kinic requires a **Linux environment** because `kinic-py` (the Python SDK) compiles native Rust code and uses Linux-specific keyring APIs.
+
+| Platform | Solution |
+|----------|----------|
+| **Linux** | Native - works directly |
+| **Mac** | Native - works directly (uses macOS Keychain) |
+| **Windows** | Use WSL2 (Windows Subsystem for Linux) |
+
+**What is WSL2?** It's a lightweight Linux VM built into Windows 10/11. It runs a real Linux kernel, shares your filesystem, and is much lighter than a full VM. Install with: `wsl --install -d Ubuntu` in PowerShell as Admin.
+
 ### Option 1: Mock Mode (Development)
 
 No tokens needed - uses in-memory storage for development:
