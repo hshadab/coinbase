@@ -20,51 +20,67 @@ Coinbase is building the rails for [agentic commerce](https://www.coinbase.com/d
 
 | Pillar | Technology | What It Provides |
 |--------|------------|------------------|
-| **Verifiable Compute** | zkML (Jolt Atlas) | Cryptographic proof that agent ran its policy correctly |
-| **Verifiable Memory** | Kinic | On-chain vector database with zkML-proven embeddings |
+| **Verifiable Inference** | zkML (Jolt Atlas) | Cryptographic proof that AI model inference ran correctly |
+| **Verifiable Memory** | Kinic + Base | On-chain vector DB (Kinic) with Merkle commitments (Base) |
 
 Together, they enable **trustless** agent-to-agent commerce—no trust in operators required.
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         TRUSTLESS AGENTKIT                           │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│   Your Agent (LangChain, OpenAI, Claude, etc.)                       │
-│                            │                                          │
-│                            ▼                                          │
-│   ┌────────────────────────────────────────────┐                     │
-│   │         TRUSTLESS AGENTKIT LAYER           │ ◀── You are here   │
-│   │  ┌───────────────┐  ┌───────────────────┐ │                     │
-│   │  │   Verifiable  │  │    Verifiable     │ │                     │
-│   │  │    Compute    │  │      Memory       │ │                     │
-│   │  │  (zkML/Jolt)  │  │     (Kinic)       │ │                     │
-│   │  └───────────────┘  └───────────────────┘ │                     │
-│   │           │                   │           │                     │
-│   │           └───────┬───────────┘           │                     │
-│   │                   ▼                       │                     │
-│   │        ERC-8004 On-Chain Registries       │                     │
-│   │   (Identity + Reputation + Validation)    │                     │
-│   └────────────────────────────────────────────┘                     │
-│                            │                                          │
-│                            ▼                                          │
-│   ┌────────────────────────────────────────────┐                     │
-│   │     AgentKit + CDP Wallet + x402           │                     │
-│   │     Fast, free, global payments            │                     │
-│   └────────────────────────────────────────────┘                     │
-│                            │                                          │
-│                            ▼                                          │
-│                    Base / Ethereum                                    │
-│                                                                       │
-└──────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                            TRUSTLESS AGENTKIT                                  │
+├────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                │
+│   Your Agent (LangChain, OpenAI, Claude, etc.)                                │
+│                            │                                                   │
+│                            ▼                                                   │
+│   ┌────────────────────────────────────────────────────────────────────────┐  │
+│   │                    TRUSTLESS AGENTKIT LAYER                            │  │
+│   │                                                                        │  │
+│   │  ┌─────────────────────────┐    ┌─────────────────────────────────┐   │  │
+│   │  │  VERIFIABLE INFERENCE   │    │       VERIFIABLE MEMORY         │   │  │
+│   │  │      (zkML/Jolt)        │    │        (Kinic + Base)           │   │  │
+│   │  ├─────────────────────────┤    ├─────────────────────────────────┤   │  │
+│   │  │ • AI model runs in zkVM │    │ KINIC (Internet Computer)       │   │  │
+│   │  │ • SNARK proves correct  │    │ • Actual memory storage         │   │  │
+│   │  │   inference execution   │    │ • Vector embeddings (zkML)      │   │  │
+│   │  │ • Policy model: ONNX    │    │ • Semantic search               │   │  │
+│   │  │ • Proof: ~2.4s generate │    │                                 │   │  │
+│   │  │                         │    │ BASE (Ethereum L2)              │   │  │
+│   │  │ Proves: "This decision  │    │ • Merkle root commitments       │   │  │
+│   │  │  came from THIS model   │    │ • Inclusion proofs              │   │  │
+│   │  │  with THESE inputs"     │    │ • Attestations & credentials    │   │  │
+│   │  │                         │    │                                 │   │  │
+│   │  │                         │    │ Proves: "This memory existed    │   │  │
+│   │  │                         │    │  at this time, unmodified"      │   │  │
+│   │  └─────────────────────────┘    └─────────────────────────────────┘   │  │
+│   │                      │                        │                       │  │
+│   │                      └──────────┬─────────────┘                       │  │
+│   │                                 ▼                                     │  │
+│   │              ERC-8004 On-Chain Registries (Base)                      │  │
+│   │     ┌─────────────┬─────────────────────┬──────────────────┐          │  │
+│   │     │  Identity   │    Reputation       │   Validation     │          │  │
+│   │     │  (ERC-721)  │  (Feedback scores)  │  (zkML proofs)   │          │  │
+│   │     └─────────────┴─────────────────────┴──────────────────┘          │  │
+│   └────────────────────────────────────────────────────────────────────────┘  │
+│                                    │                                          │
+│                                    ▼                                          │
+│   ┌────────────────────────────────────────────────────────────────────────┐  │
+│   │              AgentKit + CDP Wallet + x402 Payments                     │  │
+│   │                    Fast, free, global transactions                     │  │
+│   └────────────────────────────────────────────────────────────────────────┘  │
+│                                    │                                          │
+│                                    ▼                                          │
+│                             Base / Ethereum                                   │
+│                                                                                │
+└────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## What You Get
 
 | Feature | What It Does | Why It Matters |
 |---------|--------------|----------------|
-| **zkML Guardrails** | Wrap any action with verifiable policy checks | Prove your agent followed rules (Jolt Atlas SNARKs) |
-| **Kinic Memory** | On-chain vector database with semantic search | Verifiable agent knowledge with zkML embeddings |
+| **Verifiable Inference** | Wrap any action with zkML policy checks | Prove AI model ran correctly (Jolt Atlas SNARKs) |
+| **Verifiable Memory** | Kinic storage + Base commitments | Kinic stores data, Base stores Merkle proofs |
 | **Agent Identity** | ERC-721 NFT per agent with reputation | Know who you're transacting with (ERC-8004) |
 | **Trust Verification** | On-chain attestations of policy compliance | Agents verify each other before transacting |
 | **x402 Payments** | HTTP-native micropayments | Agents pay for services with 402 Payment Required |
@@ -372,8 +388,8 @@ See [`services/kinic-service/README.md`](services/kinic-service/README.md) for d
 
 ## Roadmap
 
-- [x] zkML guardrails for AgentKit actions
-- [x] Kinic on-chain memory integration
+- [x] Verifiable inference (zkML) for AgentKit actions
+- [x] Verifiable memory (Kinic + Base Merkle proofs)
 - [x] ERC-8004 agent identity (ERC-721 NFTs)
 - [x] Agent reputation and trust scoring
 - [x] x402 payment integration
@@ -400,4 +416,4 @@ MIT
 
 **The future is agentic. Make your agents trustless.**
 
-*Verifiable Compute (zkML) + Verifiable Memory (Kinic) = Trustless AgentKit*
+*Verifiable Inference (zkML) + Verifiable Memory (Kinic + Base) = Trustless AgentKit*
