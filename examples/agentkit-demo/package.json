@@ -7,7 +7,8 @@
     "start": "tsx index.ts",
     "demo": "tsx index.ts",
     "marketplace": "tsx marketplace-demo.ts",
-    "memory": "tsx memory-test.ts"
+    "memory": "tsx memory-test.ts",
+    "merkle": "tsx merkle-test.ts"
   },
   "dependencies": {
     "@jolt-atlas/agentkit-guardrails": "workspace:*"
