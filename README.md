@@ -378,39 +378,44 @@ forge build
 
 ### Windows Setup (for Kinic AI Memory)
 
-Kinic requires a Linux environment. On Windows, use Multipass for a lightweight Ubuntu VM:
-
-```powershell
-# Install Multipass
-winget install Canonical.Multipass
-
-# Restart PowerShell, then create VM
-multipass launch --name kinic --cpus 1 --memory 2G --disk 10G --timeout 600
-
-# Access the VM
-multipass shell kinic
-```
-
-Inside the VM:
+Kinic requires a Linux environment. On Windows, use WSL2 (recommended):
 
 ```bash
-# Install dfx with PLAINTEXT identity (no keyring required)
-curl -fsSL https://internetcomputer.org/install.sh | sh
-source ~/.bashrc
-dfx identity new jolt-atlas --storage-mode=plaintext
-dfx identity use jolt-atlas
-dfx identity get-principal  # Your KINIC token address
+# In WSL Ubuntu terminal:
 
-# Install Rust and kinic-py
+# Install dependencies
+sudo apt update && sudo apt install -y python3-pip python3-venv curl gnome-keyring dbus-x11 libsecret-tools xxd
+
+# Install Rust and dfx
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source ~/.cargo/env
-pip install git+https://github.com/ICME-Lab/kinic-cli.git --break-system-packages
+curl -fsSL https://internetcomputer.org/install.sh | sh
+source ~/.bashrc
+
+# Create identity with plaintext storage
+dfx identity new jolt-atlas --storage-mode=plaintext
+dfx identity use jolt-atlas
+dfx identity get-principal  # Fund this address with KINIC tokens
+
+# Create venv and install kinic-py
+python3 -m venv ~/kinic-venv
+source ~/kinic-venv/bin/activate
+pip install git+https://github.com/ICME-Lab/kinic-cli.git
+pip install fastapi uvicorn pydantic python-dotenv httpx
+
+# Store identity in keyring (required for kinic-py)
+eval $(dbus-launch --sh-syntax)
+echo "" | gnome-keyring-daemon --unlock --components=secrets
+cat ~/.config/dfx/identity/jolt-atlas/identity.pem | xxd -p | tr -d '\n' | \
+  secret-tool store --label="ic:jolt-atlas" \
+    service internet_computer_identities \
+    username internet_computer_identity_jolt-atlas
 
 # Test
-python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print('SUCCESS')"
+python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print(km.list())"
 ```
 
-**Key insight:** The `--storage-mode=plaintext` flag stores identity keys in `~/.config/dfx/identity/` as PEM files instead of the system keyring, eliminating the need for D-Bus/gnome-keyring.
+See `services/kinic-service/README.md` for complete setup instructions and troubleshooting.
 
 ### Run the Prover Service
 
