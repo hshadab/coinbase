@@ -7,7 +7,7 @@
  * 3. Policy model inference (mock mode)
  * 4. Attestation creation and signing
  *
- * Note: Kinic memory tests run separately in the Multipass VM
+ * Note: Kinic memory tests run separately (see services/kinic-service/README.md)
  *
  * Run with: npx tsx scripts/e2e-test.ts
  */
@@ -229,16 +229,17 @@ async function main() {
 
   // Kinic Memory Status
   console.log("=".repeat(60));
-  console.log("KINIC MEMORY STATUS (Test in Multipass VM)");
+  console.log("KINIC MEMORY STATUS (WSL/Linux)");
   console.log("=".repeat(60));
-  console.log("  Memory Canister: 32twx-naaaa-aaaak-apguq-cai");
-  console.log("  Principal: ztb77-xc4ll-nrtkw-saqzi-sfzew-bve7n-6ur6q-cxbfi-fda24-bx43s-mqe");
+  console.log("  Memory Canister: 3tq5l-3iaaa-aaaak-apgva-cai");
+  console.log("  Principal: bmg4l-vhhpl-mq2xx-mumow-ef4do-vmk6s-46yxc-yaosp-tn5ac-l2uvz-bae");
   console.log("  Status: VERIFIED WORKING");
   console.log();
-  console.log("  Test commands (run in multipass shell kinic):");
-  console.log('    ~/.cargo/bin/kinic-cli --identity jolt-atlas --ic list');
-  console.log('    ~/.cargo/bin/kinic-cli --identity jolt-atlas --ic search \\');
-  console.log('      --memory-id 32twx-naaaa-aaaak-apguq-cai --query "zkML"');
+  console.log("  Setup: See services/kinic-service/README.md for WSL setup");
+  console.log("  Test commands:");
+  console.log('    curl http://localhost:3002/health');
+  console.log('    curl -X POST "http://localhost:3002/memories/3tq5l-3iaaa-aaaak-apgva-cai/search" \\');
+  console.log('      -H "Content-Type: application/json" -d \'{"query": "yield", "limit": 5}\'');
   console.log();
 
   if (failed > 0) {

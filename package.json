@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "tsx": "^4.20.6",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
   },
@@ -32,5 +33,8 @@
     "url": "http://local_proxy@127.0.0.1:24804/git/hshadab/coinbase"
   },
   "keywords": [],
-  "author": ""
+  "author": "",
+  "dependencies": {
+    "ethers": "^6.15.0"
+  }
 }

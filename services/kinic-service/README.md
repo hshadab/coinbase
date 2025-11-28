@@ -4,11 +4,11 @@ On-chain vector database for Coinbase AgentKit agents. Provides verifiable, tamp
 
 ## What is Kinic AI Memory?
 
-Kinic provides an **on-chain vector database** that gives AI agents:
-- **Verifiable memory** - All embeddings are cryptographically proven
+Kinic provides an **on-chain vector database** on the Internet Computer that gives AI agents:
+- **Verifiable memory** - All embeddings are cryptographically proven with zkML
 - **Tamper-proof storage** - Immutable, decentralized storage
 - **Semantic search** - Query agent knowledge with natural language
-- **Trust anchoring** - Merkle roots anchored on Base for verification
+- **Trust anchoring** - Merkle roots can be anchored on Base for verification
 
 ## Architecture
 
@@ -22,8 +22,8 @@ Kinic provides an **on-chain vector database** that gives AI agents:
 │                                │                            │
 │                                ▼                            │
 │                        ┌──────────────┐                     │
-│                        │ On-chain     │                     │
-│                        │ Vector DB    │                     │
+│                        │ Internet     │                     │
+│                        │ Computer     │                     │
 │                        └──────┬───────┘                     │
 │                               │                             │
 │         ┌─────────────────────┴─────────────────────┐       │
@@ -40,131 +40,156 @@ Kinic provides an **on-chain vector database** that gives AI agents:
 
 ### Option 1: Mock Mode (Development)
 
-No tokens needed - uses in-memory storage:
+No tokens needed - uses in-memory storage for development:
 
 ```bash
 pip install fastapi uvicorn pydantic python-dotenv
 python main.py
 ```
 
-### Option 2: Production Mode with Plaintext Identity (Recommended)
+### Option 2: Windows WSL Setup (Verified Working)
 
-Uses file-based identity storage - **no keyring/D-Bus required**. Works on any Linux environment including WSL, VMs, and servers.
+**Tested and verified on Windows 11 with WSL2 Ubuntu.** Creates real on-chain memory canisters, inserts data with zkML proofs, and performs semantic search.
 
-```bash
-# 1. Install dfx (Internet Computer SDK)
-curl -fsSL https://internetcomputer.org/install.sh | sh
-source ~/.bashrc
+#### Prerequisites
+- Windows 10/11 with WSL2 installed
+- Ubuntu (from Microsoft Store)
+- ~$5-10 of KINIC tokens from https://kinic.io
 
-# 2. Create identity with PLAINTEXT storage (key stored in ~/.config/dfx/identity/)
-dfx identity new jolt-atlas --storage-mode=plaintext
-dfx identity use jolt-atlas
-
-# 3. Get your principal (send KINIC tokens here)
-dfx identity get-principal
-
-# 4. Install Rust (required for kinic-py)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source ~/.cargo/env
-
-# 5. Install kinic-py
-pip install git+https://github.com/ICME-Lab/kinic-cli.git
-
-# 6. Test the connection
-python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print('SUCCESS')"
-
-# 7. Start the service
-KINIC_USE_IC=true KINIC_IDENTITY=jolt-atlas python main.py
-```
-
-**Key insight:** The `--storage-mode=plaintext` flag stores your identity's private key in a PEM file at `~/.config/dfx/identity/<name>/identity.pem` instead of the system keyring. This eliminates the need for D-Bus, gnome-keyring, or a desktop environment.
-
-### Option 3: Windows Setup with Multipass (Verified Working)
-
-For Windows users, use Multipass to run an Ubuntu VM with full Kinic support:
-
-```powershell
-# 1. Install Multipass (in PowerShell as Admin)
-winget install Canonical.Multipass
-
-# 2. Restart PowerShell, then create Ubuntu VM
-multipass launch --name kinic --cpus 1 --memory 2G --disk 10G --timeout 600
-
-# 3. Access the VM
-multipass shell kinic
-```
-
-Inside the VM, run the complete setup:
+#### Step 1: Install Dependencies (in WSL terminal)
 
 ```bash
-# Install dependencies
-sudo apt update && sudo apt install -y python3-pip curl gnome-keyring dbus-x11 libsecret-tools
-
-# Start D-Bus and keyring
-eval $(dbus-launch --sh-syntax)
-echo "" | gnome-keyring-daemon --unlock --components=secrets
-
-# Install dfx
-curl -fsSL https://internetcomputer.org/install.sh | sh
-source ~/.bashrc
-
-# Create identity with plaintext storage
-dfx identity new jolt-atlas --storage-mode=plaintext
-dfx identity use jolt-atlas
-dfx identity get-principal  # Send KINIC tokens to this address
+# Update and install required packages
+sudo apt update && sudo apt install -y python3-pip python3-venv curl gnome-keyring dbus-x11 libsecret-tools xxd
 
 # Install Rust (required for kinic-py compilation)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source ~/.cargo/env
 
-# Install kinic-py (takes ~15-20 min to compile)
-pip install git+https://github.com/ICME-Lab/kinic-cli.git --break-system-packages
+# Install dfx (Internet Computer SDK)
+curl -fsSL https://internetcomputer.org/install.sh | sh
+source ~/.bashrc
+```
 
-# CRITICAL: Store identity in keyring with correct format
-# Kinic expects hex-encoded PEM with specific service/username attributes
+#### Step 2: Create dfx Identity
+
+```bash
+# Create identity with plaintext storage (no desktop keyring needed)
+dfx identity new jolt-atlas --storage-mode=plaintext
+dfx identity use jolt-atlas
+
+# Get your principal address - send KINIC tokens here!
+dfx identity get-principal
+```
+
+**Save the seed phrase!** It's shown when you create the identity.
+
+#### Step 3: Create Python Virtual Environment and Install kinic-py
+
+```bash
+# Create and activate virtual environment
+python3 -m venv ~/kinic-venv
+source ~/kinic-venv/bin/activate
+
+# Install kinic-py (takes ~15 minutes to compile from Rust)
+pip install --upgrade pip
+pip install git+https://github.com/ICME-Lab/kinic-cli.git
+pip install fastapi uvicorn pydantic python-dotenv httpx
+```
+
+#### Step 4: Fund Your Principal
+
+1. Go to https://kinic.io
+2. Connect your wallet
+3. Send KINIC tokens to your principal address (from Step 2)
+4. ~2 KINIC is enough for testing
+
+#### Step 5: Configure Keyring and Start Service
+
+**Important:** kinic-py requires the identity in the system keyring. Run these commands in the terminal where you'll run the service:
+
+```bash
+# Start D-Bus and unlock keyring
+eval $(dbus-launch --sh-syntax)
+echo "" | gnome-keyring-daemon --unlock --components=secrets
+
+# Store identity in keyring (hex-encoded PEM format)
 cat ~/.config/dfx/identity/jolt-atlas/identity.pem | xxd -p | tr -d '\n' | \
   secret-tool store --label="ic:jolt-atlas" \
     service internet_computer_identities \
     username internet_computer_identity_jolt-atlas
 
-# Test CLI
-~/.cargo/bin/kinic-cli --identity jolt-atlas --ic list
-
-# Test Python API
-python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print('SUCCESS')"
+# Verify it works
+python3 -c "from kinic_py import KinicMemories; km = KinicMemories('jolt-atlas', ic=True); print(km.list())"
 ```
 
-**Tested and verified:** Creates on-chain memory canisters, inserts data, and performs semantic search.
+Should output `[]` (empty list) if successful.
 
-### Option 4: Production Mode with Keyring (Desktop Only)
-
-For desktop Linux environments with full keyring support:
+#### Step 6: Start the Service
 
 ```bash
-# 1. Setup identity (uses system keyring)
-./setup-icp.sh --mainnet
+# Create .env file
+cd ~/coinbase/services/kinic-service
+echo "PORT=3002
+KINIC_IDENTITY=jolt-atlas
+KINIC_USE_IC=true" > .env
 
-# 2. Fund your principal with KINIC tokens
-#    Get tokens from: https://kinic.io
-
-# 3. Install dependencies
-pip install git+https://github.com/ICME-Lab/kinic-cli.git
-pip install fastapi uvicorn pydantic python-dotenv
-
-# 4. Start service
-KINIC_USE_IC=true python main.py
+# Start the service (must be in same terminal with keyring active)
+source ~/kinic-venv/bin/activate
+python main.py
 ```
 
-**Note:** This option requires a desktop environment with D-Bus/gnome-keyring. On headless servers or WSL, use Option 2 (plaintext identity) instead.
+#### Step 7: Test the API
 
-## Identity Storage Modes
+In another terminal:
 
-| Mode | Storage Location | Requirements | Use Case |
-|------|------------------|--------------|----------|
-| **Plaintext** | `~/.config/dfx/identity/<name>/identity.pem` | None | Servers, WSL, VMs, CI/CD |
-| **Keyring** | System keyring (gnome-keyring) | D-Bus, desktop environment | Desktop Linux with GUI |
+```bash
+# Health check
+curl http://localhost:3002/health
+# Should show: {"status":"healthy","kinic_available":true,"version":"0.1.0"}
 
-**Security Note:** Plaintext mode stores the private key in a file. Ensure proper file permissions (`chmod 600`) and do not use for high-value accounts. For production with significant funds, use a hardware wallet or HSM.
+# Create a memory canister (costs ~1 KINIC)
+curl -X POST http://localhost:3002/memories \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my-agent-memory", "description": "Test memory", "identity": "jolt-atlas", "use_ic": true}'
+
+# Insert a memory (use the canister ID from above)
+curl -X POST "http://localhost:3002/memories/YOUR_CANISTER_ID/insert" \
+  -H "Content-Type: application/json" \
+  -d '{"tag": "strategy", "content": "DeFi yield optimization: focus on stablecoin pools with APY over 5%"}'
+
+# Search memories
+curl -X POST "http://localhost:3002/memories/YOUR_CANISTER_ID/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "yield optimization", "limit": 5}'
+```
+
+### Option 3: Linux/Mac Setup
+
+Same as WSL setup, but skip the WSL-specific parts. On Mac, the system keychain should work automatically.
+
+```bash
+# Install dependencies
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source ~/.cargo/env
+curl -fsSL https://internetcomputer.org/install.sh | sh
+source ~/.bashrc
+
+# Create identity
+dfx identity new jolt-atlas --storage-mode=plaintext
+dfx identity use jolt-atlas
+dfx identity get-principal  # Fund this with KINIC tokens
+
+# Create venv and install
+python3 -m venv ~/kinic-venv
+source ~/kinic-venv/bin/activate
+pip install git+https://github.com/ICME-Lab/kinic-cli.git
+pip install fastapi uvicorn pydantic python-dotenv httpx
+
+# Start service
+cd services/kinic-service
+python main.py
+```
 
 ## API Reference
 
@@ -181,14 +206,16 @@ Content-Type: application/json
 
 {
   "name": "agent-knowledge",
-  "description": "Trading strategies and market analysis"
+  "description": "Trading strategies and market analysis",
+  "identity": "jolt-atlas",
+  "use_ic": true
 }
 ```
-Creates a new on-chain vector database for an agent.
+Creates a new on-chain vector database canister. Returns the canister ID.
 
 ### Insert Memory
 ```http
-POST /memories/{memory_id}/insert
+POST /memories/{canister_id}/insert
 Content-Type: application/json
 
 {
@@ -196,11 +223,11 @@ Content-Type: application/json
   "content": "DeFi yield optimization: Focus on stable pools with >5% APY..."
 }
 ```
-Stores content with zkML-verified embeddings. Returns proof hash.
+Stores content with zkML-verified embeddings. Returns content hash, embedding hash, and zkML proof reference.
 
 ### Search Memories
 ```http
-POST /memories/{memory_id}/search
+POST /memories/{canister_id}/search
 Content-Type: application/json
 
 {
@@ -208,49 +235,82 @@ Content-Type: application/json
   "limit": 5
 }
 ```
-Semantic similarity search across agent knowledge.
+Semantic similarity search across agent knowledge. Returns matching content with similarity scores.
 
 ### Get Commitment
 ```http
-GET /memories/{memory_id}/commitment
+GET /memories/{canister_id}/commitment
 ```
 Returns current Merkle root for on-chain verification.
 
-## Integration with Base
-
-The TypeScript SDK (`AgentMemory`) coordinates between Kinic and Base:
-
-1. **Store**: Content → Kinic → zkML embedding → On-chain vector DB
-2. **Anchor**: Merkle root → Base MemoryRegistry contract
-3. **Verify**: Query Kinic proof → Verify against Base commitment
-
-This enables **trustless agent memory**:
-- Data stored in decentralized vector database
-- Commitments anchored on Base (verifiable)
-- zkML proofs guarantee embedding correctness
+### List Memories
+```http
+GET /memories
+```
+Lists all memory canisters for the current identity.
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | 3002 | Service port |
-| `KINIC_IDENTITY` | jolt-atlas | Identity name for on-chain ops |
-| `KINIC_USE_IC` | true | Enable on-chain storage |
+| `KINIC_IDENTITY` | jolt-atlas | dfx identity name for on-chain ops |
+| `KINIC_USE_IC` | true | Enable on-chain storage (false = mock mode) |
 
 ## Token Requirements
 
 | Operation | KINIC Cost |
 |-----------|------------|
-| Create memory store | ~1 KINIC |
+| Create memory canister | ~1 KINIC |
 | Insert memory | ~0.01 KINIC |
 | Search | ~0.001 KINIC |
 
-## Docker
+Get KINIC tokens from: https://kinic.io
 
+## Verified Working Setup
+
+This setup has been tested and verified working on:
+- **Windows 11 + WSL2 Ubuntu 24.04**
+- **Canister ID:** `3tq5l-3iaaa-aaaak-apgva-cai`
+- **Operations verified:** Create canister, insert memory with zkML proof, semantic search
+
+## Troubleshooting
+
+### "Keychain Error: NoEntry"
+The identity isn't in the keyring. Re-run the keyring setup commands:
 ```bash
-docker build -t kinic-memory .
-docker run -p 3002:3002 -e KINIC_USE_IC=true kinic-memory
+eval $(dbus-launch --sh-syntax)
+echo "" | gnome-keyring-daemon --unlock --components=secrets
+cat ~/.config/dfx/identity/jolt-atlas/identity.pem | xxd -p | tr -d '\n' | \
+  secret-tool store --label="ic:jolt-atlas" service internet_computer_identities username internet_computer_identity_jolt-atlas
 ```
+
+### "Cannot get secret of a locked object"
+The keyring is locked. Unlock it:
+```bash
+killall gnome-keyring-daemon 2>/dev/null
+eval $(dbus-launch --sh-syntax)
+echo "" | gnome-keyring-daemon --unlock --components=secrets
+```
+
+### "mock-canister" in response
+The service fell back to mock mode. Make sure:
+1. D-Bus and keyring are running in the same terminal as main.py
+2. The identity is stored in the keyring
+3. You have KINIC tokens in your principal
+
+### Service shows `kinic_available: false`
+kinic-py isn't installed. Activate your venv and reinstall:
+```bash
+source ~/kinic-venv/bin/activate
+pip install git+https://github.com/ICME-Lab/kinic-cli.git
+```
+
+## Security Notes
+
+- **Plaintext identity:** The private key is stored in `~/.config/dfx/identity/jolt-atlas/identity.pem`. Set proper file permissions: `chmod 600 ~/.config/dfx/identity/jolt-atlas/identity.pem`
+- **Seed phrase:** Save your seed phrase securely - it can recover your identity if the PEM file is lost
+- **Don't commit secrets:** Never commit identity.pem or seed phrases to git
 
 ## License
 
