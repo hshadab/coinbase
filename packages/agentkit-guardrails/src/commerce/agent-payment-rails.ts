@@ -445,7 +445,12 @@ export class AgentPaymentRails {
         }),
       });
 
-      const result = await response.json();
+      const result = await response.json() as {
+        success: boolean;
+        decision?: string;
+        proof_hash?: string;
+        confidence?: number;
+      };
 
       if (result.success && result.decision === "approve") {
         // Post attestation on-chain
@@ -463,7 +468,7 @@ export class AgentPaymentRails {
           outputHash,
           result.proof_hash || ethers.ZeroHash,
           1, // approve
-          BigInt(Math.floor(result.confidence * 1e18))
+          BigInt(Math.floor((result.confidence || 0) * 1e18))
         );
 
         return { success: true, attestationHash };

@@ -27,7 +27,7 @@ export const ATTESTATION_DOMAIN: EIP712Domain = {
 /**
  * EIP-712 types for attestation
  */
-export const ATTESTATION_TYPES = {
+export const ATTESTATION_TYPES: Record<string, { name: string; type: string }[]> = {
   GuardrailAttestation: [
     { name: 'modelCommitment', type: 'bytes32' },
     { name: 'inputHash', type: 'bytes32' },
@@ -37,7 +37,7 @@ export const ATTESTATION_TYPES = {
     { name: 'timestamp', type: 'uint256' },
     { name: 'nonce', type: 'bytes32' },
   ],
-} as const;
+};
 
 /**
  * Create attestation data from guardrail result
@@ -189,10 +189,23 @@ export async function verifyAttestationSignature(
 
     const valid = await verifyTypedData({
       address: attestation.signer as `0x${string}`,
-      domain: fullDomain,
+      domain: {
+        name: fullDomain.name,
+        version: fullDomain.version,
+        chainId: fullDomain.chainId,
+        verifyingContract: fullDomain.verifyingContract as `0x${string}`,
+      },
       types: ATTESTATION_TYPES,
       primaryType: 'GuardrailAttestation',
-      message: typedValue,
+      message: {
+        modelCommitment: typedValue.modelCommitment as `0x${string}`,
+        inputHash: typedValue.inputHash as `0x${string}`,
+        outputHash: typedValue.outputHash as `0x${string}`,
+        decision: typedValue.decision,
+        confidence: typedValue.confidence,
+        timestamp: typedValue.timestamp,
+        nonce: typedValue.nonce as `0x${string}`,
+      },
       signature: attestation.signature as `0x${string}`,
     });
 

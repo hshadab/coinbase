@@ -14,7 +14,6 @@ export {
   type TrustRequirements,
   type Escrow,
   type EscrowConfig,
-  AgentStatus,
   PaymentStatus,
   EscrowStatus,
 } from "./agent-payment-rails";

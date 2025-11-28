@@ -86,10 +86,11 @@ export class PolicyModel {
 
     try {
       const ort = await import('onnxruntime-node');
-      const session = this.session as InstanceType<typeof ort.InferenceSession>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const session = this.session as any;
 
       // Convert features to tensor
-      const inputNames = session.inputNames;
+      const inputNames = session.inputNames as readonly string[];
       const featureArray = this.featuresToArray(features, inputNames);
       const tensor = new ort.Tensor('float32', featureArray, [1, featureArray.length]);
 
