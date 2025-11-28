@@ -257,14 +257,74 @@ contracts/src/erc8004/           # On-chain registries (Base Sepolia)
 services/kinic-service/          # On-chain vector database (IC)
 prover-service/                  # Rust zkML prover (Jolt Atlas)
 examples/agentkit-demo/          # Interactive demos
-├── index.ts                     # Basic guardrails demo
-└── marketplace-demo.ts          # Full A2A marketplace demo
+├── index.ts                     # Basic guardrails demo (zkML + Kinic)
+├── marketplace-demo.ts          # Full A2A marketplace demo
+├── memory-test.ts               # Kinic + Base integration test
+└── merkle-test.ts               # Merkle proof step-by-step demo
 ```
 
 **Deployed on Base Sepolia:**
 - IdentityRegistry: `0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f`
 - ValidationRegistry: `0x15957085f167f181B55Dc2cae3eE019D427C9778`
 - MemoryRegistry: `0x525D0c8908939303CD7ebEEf5A350EC5b6764451`
+
+## Memory Integrity (Merkle Proofs)
+
+Base stores **memory commitments** (Merkle roots), not actual data. This allows efficient verification that a memory exists without storing all memories on-chain.
+
+### How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        MERKLE TREE FOR AGENT MEMORY                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│                            [ROOT]                                           │
+│                     0x73bd706f4ebc...                                       │
+│                    ↙                 ↘                                      │
+│              [BRANCH]              [BRANCH]                                 │
+│         0x58a4dc78023f...     0x8e406bf0b6b5...                             │
+│           ↙        ↘            ↙         ↘                                 │
+│       [LEAF]    [LEAF]     [LEAF]      [LEAF]                              │
+│     Memory 1   Memory 2   Memory 3   Memory 4                              │
+│                                                                             │
+│  • ROOT stored on Base (MemoryRegistry)                                    │
+│  • LEAVES (memories) stored in Kinic                                       │
+│  • PROOF = sibling hashes from leaf to root                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Flow
+
+1. **Memory Insert (Kinic)**: Store content + embedding in IC canister
+2. **Compute Hash**: `contentHash = keccak256(memory content)`
+3. **Update Merkle Tree**: Add hash as leaf, recompute root
+4. **Store Root on Base**: `MemoryRegistry.updateCommitment(agentId, newRoot, count, zkProof)`
+5. **Prove Memory Exists**: Generate proof (sibling hashes), verify against stored root
+
+### Security Properties
+
+| Property | Guarantee |
+|----------|-----------|
+| **Can't fake a memory** | Would need to find hash collision (cryptographically impossible) |
+| **Can't modify memory** | Root would change, detected on verification |
+| **Can't delete memory** | Root would change, detected on verification |
+| **Efficient proofs** | O(log n) size - only ~20 hashes needed for 1M memories |
+
+### Test Merkle Proofs
+
+```bash
+# Run the step-by-step Merkle proof test
+pnpm --filter trustless-agentkit-demo merkle
+```
+
+This demonstrates:
+- Building a Merkle tree from memory hashes
+- Generating inclusion proofs
+- Verifying proofs match stored root
+- Detecting tampered content
+- Updating root when adding new memories
 
 ## Running the Demos
 
@@ -276,11 +336,17 @@ cd coinbase && pnpm install
 # Build SDK
 pnpm --filter @trustless-agentkit/sdk build
 
-# Run basic demo (zkML guardrails)
+# Run basic demo (zkML + Kinic)
 pnpm --filter trustless-agentkit-demo demo
 
 # Run marketplace demo (full A2A with zkML + Kinic + x402)
 pnpm --filter trustless-agentkit-demo marketplace
+
+# Run memory test (Kinic + Base integration)
+pnpm --filter trustless-agentkit-demo memory
+
+# Run Merkle proof demo (step-by-step)
+pnpm --filter trustless-agentkit-demo merkle
 ```
 
 ### Running Services
