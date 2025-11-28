@@ -5,9 +5,9 @@ import "./interfaces/IIdentityRegistry.sol";
 
 /**
  * @title ValidationRegistry (ERC-8004 Compliant + zkML Extensions)
- * @author Jolt Atlas + Coinbase AgentKit
+ * @author Trustless AgentKit
  * @notice Validation request/response registry per ERC-8004 with zkML proof integration
- * @dev Extends ERC-8004 ValidationRegistry with Jolt Atlas zkML proof verification
+ * @dev Part of Trustless AgentKit - extends ERC-8004 ValidationRegistry with zkML proof verification (Jolt Atlas)
  *
  * Key Features (ERC-8004):
  * - Validation request/response workflow

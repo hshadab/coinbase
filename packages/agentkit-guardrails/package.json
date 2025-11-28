@@ -1,7 +1,7 @@
 {
-  "name": "@jolt-atlas/agentkit-guardrails",
+  "name": "@trustless-agentkit/sdk",
   "version": "0.1.0",
-  "description": "zkML guardrails for Coinbase AgentKit - cryptographic proof that your agent ran the policy it claimed",
+  "description": "Trustless AgentKit SDK - Verifiable Compute (zkML) + Verifiable Memory (Kinic) for Coinbase AgentKit",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",

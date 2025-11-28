@@ -1,4 +1,4 @@
-# Jolt Atlas: Trust Layer for AgentKit
+# Trustless AgentKit
 
 > **Every AI agent deserves a wallet. Every wallet deserves verifiable behavior.**
 
@@ -8,30 +8,43 @@ Built for [Coinbase AgentKit](https://github.com/coinbase/agentkit) | Extends [C
 [![x402 Compatible](https://img.shields.io/badge/x402-Compatible-00D632.svg)](https://github.com/coinbase/x402)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Why Jolt Atlas?
+## Why Trustless AgentKit?
 
-[AgentKit](https://docs.cdp.coinbase.com/agent-kit/welcome) gives agents wallets. **Jolt Atlas makes their actions verifiable.**
+[AgentKit](https://docs.cdp.coinbase.com/agent-kit/welcome) gives agents wallets. **Trustless AgentKit makes their behavior verifiable.**
 
 Coinbase is building the rails for [agentic commerce](https://www.coinbase.com/developer-platform/discover/launches/introducing-agentkit)—AI agents that can transact autonomously. But as agents gain financial capability, a critical question emerges:
 
 > *How do you trust an agent you didn't build?*
 
-**Jolt Atlas answers this with cryptographic proof.** Using zero-knowledge machine learning (zkML), agents can prove they followed their stated policies without revealing sensitive data. No trust in operators required.
+**Trustless AgentKit answers this with two pillars:**
+
+| Pillar | Technology | What It Provides |
+|--------|------------|------------------|
+| **Verifiable Compute** | zkML (Jolt Atlas) | Cryptographic proof that agent ran its policy correctly |
+| **Verifiable Memory** | Kinic | On-chain vector database with zkML-proven embeddings |
+
+Together, they enable **trustless** agent-to-agent commerce—no trust in operators required.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                         AGENTIC COMMERCE STACK                        │
+│                         TRUSTLESS AGENTKIT                           │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                       │
 │   Your Agent (LangChain, OpenAI, Claude, etc.)                       │
 │                            │                                          │
 │                            ▼                                          │
 │   ┌────────────────────────────────────────────┐                     │
-│   │            JOLT ATLAS TRUST LAYER           │ ◀── You are here   │
-│   │  ┌─────────┐ ┌─────────┐ ┌────────────────┐│                     │
-│   │  │ zkML    │ │Identity │ │ Agent Memory   ││                     │
-│   │  │ Proofs  │ │(ERC-721)│ │ (Kinic+Base)   ││                     │
-│   │  └─────────┘ └─────────┘ └────────────────┘│                     │
+│   │         TRUSTLESS AGENTKIT LAYER           │ ◀── You are here   │
+│   │  ┌───────────────┐  ┌───────────────────┐ │                     │
+│   │  │   Verifiable  │  │    Verifiable     │ │                     │
+│   │  │    Compute    │  │      Memory       │ │                     │
+│   │  │  (zkML/Jolt)  │  │     (Kinic)       │ │                     │
+│   │  └───────────────┘  └───────────────────┘ │                     │
+│   │           │                   │           │                     │
+│   │           └───────┬───────────┘           │                     │
+│   │                   ▼                       │                     │
+│   │        ERC-8004 On-Chain Registries       │                     │
+│   │   (Identity + Reputation + Validation)    │                     │
 │   └────────────────────────────────────────────┘                     │
 │                            │                                          │
 │                            ▼                                          │
@@ -48,136 +61,191 @@ Coinbase is building the rails for [agentic commerce](https://www.coinbase.com/d
 
 ## What You Get
 
-| Feature | What It Does | Why It Matters for Agentic Commerce |
-|---------|--------------|-------------------------------------|
-| **zkML Guardrails** | Wrap any action with verifiable policy checks | Prove your agent followed rules without trusting you |
-| **Agent Identity** | ERC-721 NFT per agent with reputation | Know who you're transacting with (ERC-8004 compliant) |
-| **Trust Verification** | On-chain attestations of policy compliance | Agents can verify each other before transacting |
-| **Agent Memory** | Kinic on-chain vector database | Verifiable agent knowledge with zkML proofs |
-| **x402 Integration** | HTTP-native micropayments | Agents pay for APIs with 1 line of code (coming soon) |
+| Feature | What It Does | Why It Matters |
+|---------|--------------|----------------|
+| **zkML Guardrails** | Wrap any action with verifiable policy checks | Prove your agent followed rules (Jolt Atlas SNARKs) |
+| **Kinic Memory** | On-chain vector database with semantic search | Verifiable agent knowledge with zkML embeddings |
+| **Agent Identity** | ERC-721 NFT per agent with reputation | Know who you're transacting with (ERC-8004) |
+| **Trust Verification** | On-chain attestations of policy compliance | Agents verify each other before transacting |
+| **x402 Payments** | HTTP-native micropayments | Agents pay for services with 402 Payment Required |
+| **Trustless Marketplace** | Full A2A commerce integration | Discover → Verify → Pay → Execute → Record |
 
 ## Quick Start
 
-### 1. Wrap AgentKit Actions with zkML Guardrails
+### The Full Trustless Example (zkML + Kinic)
 
 ```typescript
-import { withZkGuardrail } from '@jolt-atlas/agentkit-guardrails';
+import {
+  createMarketplace,
+  withZkGuardrail,
+  AgentMemory,
+  StorageType,
+} from '@trustless-agentkit/sdk';
+
+// 1. Create marketplace with both verifiable compute and memory
+const marketplace = createMarketplace(signer, {
+  erc8004: {
+    identityRegistryAddress: '0x...',
+    reputationRegistryAddress: '0x...',
+    validationRegistryAddress: '0x...',
+  },
+  x402: { network: 'base-sepolia' },
+});
+
+// 2. Initialize (registers agent identity on-chain)
+await marketplace.initialize();
+
+// 3. Register a service (stored in Kinic with zkML embeddings)
+await marketplace.registerService({
+  serviceType: 'data-analysis',
+  description: 'AI-powered market analysis with ML',
+  basePrice: '1000000', // 1 USDC
+  endpoint: 'https://myagent.example/api/analyze',
+  tags: ['analysis', 'ml', 'markets'],
+});
+
+// 4. Discover agents via Kinic semantic search
+const providers = await marketplace.discoverAgents({
+  query: 'sentiment analysis for crypto markets',
+  minTrustScore: 70,
+});
+
+// 5. Execute service with x402 payment + zkML proof
+const result = await marketplace.executeService(providers[0].agentId, {
+  serviceType: 'data-analysis',
+  payload: { symbol: 'ETH', timeframe: '24h' },
+}, {
+  requireProof: true,      // Require zkML proof
+  postAttestation: true,   // Record on-chain
+});
+
+console.log(result.result);          // { sentiment: 'bullish', confidence: 0.87 }
+console.log(result.proof);           // '0x...' zkML SNARK
+console.log(result.attestationHash); // On-chain record
+```
+
+### Wrap AgentKit Actions with zkML + Kinic
+
+```typescript
+import { withZkGuardrail, AgentMemory, StorageType } from '@trustless-agentkit/sdk';
 import { AgentKit } from '@coinbase/agentkit';
 
-const agent = await AgentKit.from({ cdpApiKeyName: 'your-key' });
+// Setup verifiable memory
+const memory = new AgentMemory({
+  stores: [{ type: StorageType.Kinic, config: { canisterId: '...' } }],
+});
+await memory.initialize();
 
-// Wrap any action with zkML verification
+// Wrap action with zkML guardrails
 const safeTransfer = withZkGuardrail(
   agent.getAction('transfer'),
   {
     policyModel: './models/spending-policy.onnx',
-    proofMode: 'always',  // Generate proof for every action
+    proofMode: 'always',
   }
 );
 
-// Execute with cryptographic proof of policy compliance
+// Execute with proof
 const result = await safeTransfer({
   to: '0x...',
   amount: '100',
   asset: 'USDC',
 });
 
-console.log(result.guardrail.decision);  // 'approve'
-console.log(result.guardrail.proof);     // '0x...' zkML proof
-```
-
-### 2. Register Agent Identity (for A2A Commerce)
-
-```typescript
-import { AgentPaymentRails } from '@jolt-atlas/agentkit-guardrails';
-
-const rails = new AgentPaymentRails(signer, {
-  identityRegistryAddress: IDENTITY_REGISTRY,
-  validationRegistryAddress: VALIDATION_REGISTRY,
+// Store interaction in Kinic (verifiable memory)
+await memory.insert({
+  content: JSON.stringify({
+    action: 'transfer',
+    decision: result.guardrail.decision,
+    proof: result.guardrail.proof,
+  }),
+  metadata: { type: 'transaction', timestamp: Date.now() },
 });
 
-// Mint ERC-721 identity NFT for your agent
-const agentId = await rails.registerIdentity(
-  modelCommitment,        // Hash of your policy model
-  'ipfs://metadata...'    // Agent metadata
-);
-```
-
-### 3. Pay Other Agents with Trust Verification
-
-```typescript
-// Only pay agents that meet trust requirements
-const payment = await rails.payAgent({
-  toAgentId: 42,
-  amount: ethers.parseEther('10'),
-  token: USDC_ADDRESS,
-  trustRequirements: {
-    minReputationScore: 70,     // Minimum reputation
-    minZkmlApprovalRate: 80,    // 80%+ policy compliance
-    requireZkmlProof: true,     // Fresh proof required
-  },
+// Later: semantic search across all interactions
+const history = await memory.search({
+  query: 'transfers over 100 USDC',
+  limit: 10,
 });
 ```
 
-### 4. Coming Soon: x402 Micropayments
+## Use Cases (All Include zkML + Kinic)
 
+### 1. Autonomous Shopping Agent
 ```typescript
-// Agent pays for API access using x402 protocol
-// 1 line of code, no API keys, $0.001 minimum
-const response = await x402Fetch('https://api.example.com/data', {
-  paymentToken: USDC_ADDRESS,
-  maxAmount: '0.01',
-});
-```
-
-## Use Cases for Agentic Commerce
-
-### Autonomous Shopping Agent
-```typescript
-const shopperAgent = withZkGuardrail(purchaseAction, {
+// Verifiable compute: zkML proves spending policy compliance
+const guardrailedPurchase = withZkGuardrail(purchaseAction, {
   policyModel: './models/shopping-limits.onnx',
-  // Trained on: budget, category, merchant reputation, time of day
+  proofMode: 'always',
 });
 
-// Every purchase generates cryptographic proof of policy compliance
-// Users can verify their agent didn't overspend
-```
-
-### Multi-Agent Supply Chain
-```typescript
-// Warehouse agent pays delivery agent
-// But only if delivery agent has verified credentials
-await warehouseAgent.payAgent({
-  toAgentId: deliveryAgentId,
-  amount: deliveryFee,
-  trustRequirements: {
-    requiredCredentials: ['DeliveryLicense'],
-    minZkmlApprovalRate: 90,
-  },
+// Verifiable memory: Kinic stores purchase history
+await memory.insert({
+  content: `Purchased ${item} for $${price}`,
+  metadata: { type: 'purchase', category, merchant },
 });
+
+// User can verify: "Did my agent overspend?"
+// - Check zkML proofs for each transaction
+// - Search Kinic: "purchases over $100 this month"
 ```
 
-### AI Data Marketplace
+### 2. Multi-Agent Supply Chain
 ```typescript
-// Escrow releases when zkML proves data quality
-const escrow = await dataAgent.createEscrow({
-  toAgentId: buyerAgentId,
-  amount: dataPrice,
-  releaseCondition: {
-    type: 'zkml-attestation',
-    modelCommitment: DATA_QUALITY_MODEL,
-    minConfidence: 0.9,
-  },
+// Agent discovery via Kinic semantic search
+const deliveryAgents = await marketplace.discoverAgents({
+  query: 'licensed delivery service in NYC',
+  minTrustScore: 90,
+});
+
+// Trust verification via ERC-8004
+// - Identity: Is this a registered agent?
+// - Reputation: What's their feedback score?
+// - Validation: How many verified deliveries?
+
+// Payment with proof
+const payment = await marketplace.executeService(deliveryAgents[0].agentId, {
+  serviceType: 'delivery',
+  payload: { pickup: '...', dropoff: '...' },
+}, { requireProof: true });
+
+// Interaction stored in Kinic for future trust building
+```
+
+### 3. AI Data Marketplace
+```typescript
+// Data provider registers in marketplace (stored in Kinic)
+await marketplace.registerService({
+  serviceType: 'market-data',
+  description: 'Real-time crypto market data with ML signals',
+  basePrice: '500000', // 0.50 USDC per query
+  tags: ['crypto', 'data', 'signals'],
+});
+
+// Buyer discovers via semantic search
+const dataProviders = await marketplace.discoverAgents({
+  query: 'crypto market signals with high accuracy',
+});
+
+// Execute with escrow released on zkML proof of data quality
+const data = await marketplace.executeService(dataProviders[0].agentId, {
+  serviceType: 'market-data',
+  payload: { symbols: ['BTC', 'ETH'] },
+}, {
+  requireProof: true,  // zkML proves data quality model ran
 });
 ```
 
 ## Architecture
 
 ```
-packages/agentkit-guardrails/    # TypeScript SDK
-├── core/                        # withZkGuardrail wrapper
-├── commerce/                    # AgentPaymentRails (A2A)
-├── memory/                      # Kinic integration
+packages/agentkit-guardrails/    # TypeScript SDK (@trustless-agentkit/sdk)
+├── core/                        # withZkGuardrail - verifiable compute
+├── memory/                      # AgentMemory - Kinic integration
+├── commerce/                    # TrustlessMarketplace - A2A commerce
+│   ├── agent-payment-rails.ts   # ERC-8004 registries
+│   ├── x402-client.ts           # HTTP micropayments
+│   └── trustless-marketplace.ts # Full integration
 └── proof/                       # zkML proof generation
 
 contracts/src/erc8004/           # On-chain registries (Base Sepolia)
@@ -186,8 +254,11 @@ contracts/src/erc8004/           # On-chain registries (Base Sepolia)
 ├── ValidationRegistry.sol       # zkML attestations
 └── MemoryRegistry.sol           # Knowledge commitments
 
-services/kinic-service/          # On-chain vector database
+services/kinic-service/          # On-chain vector database (IC)
 prover-service/                  # Rust zkML prover (Jolt Atlas)
+examples/agentkit-demo/          # Interactive demos
+├── index.ts                     # Basic guardrails demo
+└── marketplace-demo.ts          # Full A2A marketplace demo
 ```
 
 **Deployed on Base Sepolia:**
@@ -195,45 +266,52 @@ prover-service/                  # Rust zkML prover (Jolt Atlas)
 - ValidationRegistry: `0x15957085f167f181B55Dc2cae3eE019D427C9778`
 - MemoryRegistry: `0x525D0c8908939303CD7ebEEf5A350EC5b6764451`
 
-## Performance
-
-| Operation | Time | Notes |
-|-----------|------|-------|
-| zkML Proof Generation | ~2.4s | Real Jolt Atlas SNARK |
-| Proof Verification | ~400ms | On-chain verifiable |
-| A2A Payment (w/ proof) | ~3s | Includes trust check |
-
-## Getting Started
+## Running the Demos
 
 ```bash
-# Install
-npm install @jolt-atlas/agentkit-guardrails
-
-# Or clone and build
+# Clone and install
 git clone https://github.com/hshadab/coinbase
-cd coinbase/packages/agentkit-guardrails
-npm install && npm run build
+cd coinbase && pnpm install
+
+# Build SDK
+pnpm --filter @trustless-agentkit/sdk build
+
+# Run basic demo (zkML guardrails)
+pnpm --filter trustless-agentkit-demo demo
+
+# Run marketplace demo (full A2A with zkML + Kinic + x402)
+pnpm --filter trustless-agentkit-demo marketplace
 ```
 
 ### Running Services
 
 ```bash
-# Prover service (zkML)
+# Prover service (zkML - Jolt Atlas)
 cd prover-service && cargo run
 
 # Kinic memory service (requires Linux/WSL/Mac)
 cd services/kinic-service && python main.py
 ```
 
-See [`services/kinic-service/README.md`](services/kinic-service/README.md) for detailed setup including WSL instructions for Windows.
+See [`services/kinic-service/README.md`](services/kinic-service/README.md) for detailed setup.
+
+## Performance
+
+| Operation | Time | Component |
+|-----------|------|-----------|
+| zkML Proof Generation | ~2.4s | Jolt Atlas SNARK |
+| Kinic Embedding + Insert | ~800ms | On-chain vector DB |
+| Kinic Semantic Search | ~200ms | Vector similarity |
+| Full A2A Transaction | ~4s | Discovery → Pay → Execute → Record |
 
 ## Roadmap
 
 - [x] zkML guardrails for AgentKit actions
+- [x] Kinic on-chain memory integration
 - [x] ERC-8004 agent identity (ERC-721 NFTs)
 - [x] Agent reputation and trust scoring
-- [x] Kinic on-chain memory integration
-- [ ] **x402 payment integration** ← Next
+- [x] x402 payment integration
+- [x] Trustless Marketplace (full A2A)
 - [ ] On-chain zkML verification
 - [ ] Cross-chain agent identity
 
@@ -254,6 +332,6 @@ MIT
 
 ---
 
-**The future is agentic. Give your agents wallets. Make their behavior verifiable.**
+**The future is agentic. Make your agents trustless.**
 
-*An extension for [Coinbase AgentKit](https://github.com/coinbase/agentkit) | Powered by [Jolt Atlas zkML](https://github.com/ICME-Lab/jolt-atlas)*
+*Verifiable Compute (zkML) + Verifiable Memory (Kinic) = Trustless AgentKit*
