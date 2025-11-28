@@ -1,5 +1,5 @@
 /**
- * Jolt Atlas + AgentKit Demo
+ * Trustless AgentKit Demo
  *
  * Shows how to add verifiable behavior to your AgentKit agents.
  *
@@ -48,7 +48,7 @@ const agentKitTransfer: AgentKitAction<TransferParams, { txHash: string }> = asy
 async function demo() {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════════╗
-║                    JOLT ATLAS + AGENTKIT DEMO                        ║
+║                    TRUSTLESS AGENTKIT DEMO                           ║
 ║                                                                       ║
 ║  Every AI agent deserves a wallet.                                   ║
 ║  Every wallet deserves verifiable behavior.                          ║

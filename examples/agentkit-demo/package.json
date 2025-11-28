@@ -1,7 +1,7 @@
 {
-  "name": "agentkit-demo",
+  "name": "trustless-agentkit-demo",
   "version": "1.0.0",
-  "description": "Jolt Atlas + AgentKit demo - verifiable agent behavior",
+  "description": "Trustless AgentKit demo - verifiable agent behavior with zkML proofs",
   "main": "index.ts",
   "scripts": {
     "start": "tsx index.ts",
