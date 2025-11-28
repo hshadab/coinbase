@@ -109,18 +109,41 @@ export {
   highValueFeatureExtractor,
 } from './utils/feature-extractors.js';
 
-// Commerce exports - Agent-to-Agent Payment Rails
+// Commerce exports - Agent-to-Agent Payment Rails + x402 + Marketplace
 export {
+  // ERC-8004 Payment Rails
   AgentPaymentRails,
   createPaymentRails,
   type AgentIdentity,
   type AgentPayment,
   type AgentPaymentRequest,
   type TrustRequirements,
+  type ZkmlTrustScore,
+  type AgentReputation,
   type Escrow,
   type EscrowConfig,
+  type ERC8004Config,
   PaymentStatus,
   EscrowStatus,
+  // x402 HTTP Micropayments
+  X402Client,
+  createX402Client,
+  create402Response,
+  USDC_ADDRESSES,
+  type X402ClientConfig,
+  type X402PaymentRequired,
+  type X402PaymentPayload,
+  type X402PaymentResult,
+  type PaymentScheme,
+  // Trustless Marketplace
+  TrustlessMarketplace,
+  createMarketplace,
+  type MarketplaceConfig,
+  type AgentService,
+  type ServiceRequest,
+  type ServiceResponse,
+  type DiscoveryOptions,
+  type ExecutionOptions,
 } from './commerce/index.js';
 
 // Memory exports - Verifiable Agent Memory (Kinic + Base)
