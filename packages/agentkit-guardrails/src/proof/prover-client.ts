@@ -1,8 +1,8 @@
 /**
- * Jolt Atlas Prover Service Client
+ * Trustless AgentKit Prover Service Client
  *
- * TypeScript client for communicating with the Jolt Atlas prover service.
- * Handles proof generation and verification requests.
+ * TypeScript client for communicating with the zkML prover service.
+ * Handles proof generation and verification requests (powered by Jolt Atlas).
  */
 
 import type { FeatureVector, PolicyDecision } from '../core/types.js';
@@ -321,7 +321,7 @@ let defaultClient: ProverServiceClient | null = null;
 export function getProverServiceClient(config?: ProverServiceConfig): ProverServiceClient {
   if (!defaultClient || config) {
     const endpoint = config?.endpoint ??
-      process.env.JOLT_ATLAS_PROVER_URL ??
+      process.env.TRUSTLESS_PROVER_URL ??
       'http://localhost:3001';
 
     defaultClient = new ProverServiceClient({
@@ -338,7 +338,7 @@ export function getProverServiceClient(config?: ProverServiceConfig): ProverServ
 export async function isProverServiceAvailable(endpoint?: string): Promise<boolean> {
   try {
     const client = new ProverServiceClient({
-      endpoint: endpoint ?? process.env.JOLT_ATLAS_PROVER_URL ?? 'http://localhost:3001',
+      endpoint: endpoint ?? process.env.TRUSTLESS_PROVER_URL ?? 'http://localhost:3001',
       timeout: 5000,
       retryOnFailure: false,
     });

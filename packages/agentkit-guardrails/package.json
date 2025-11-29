@@ -60,7 +60,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/jolt-atlas/agentkit-guardrails"
+    "url": "https://github.com/hshadab/coinbase"
   },
   "license": "MIT"
 }

@@ -340,6 +340,7 @@ examples/agentkit-demo/          # CLI demos
 
 **Deployed on Base Sepolia:**
 - IdentityRegistry: `0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f`
+- ReputationRegistry: `0xaEf4e79A1f51F48b5E5206cBCc32fFe6549edd7E`
 - ValidationRegistry: `0x15957085f167f181B55Dc2cae3eE019D427C9778`
 - MemoryRegistry: `0x525D0c8908939303CD7ebEEf5A350EC5b6764451`
 

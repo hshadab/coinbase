@@ -1,5 +1,5 @@
 {
-  "name": "jolt-atlas-basic-example",
+  "name": "trustless-agentkit-basic-example",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     "start": "tsx index.ts"
   },
   "dependencies": {
-    "@jolt-atlas/agentkit-guardrails": "workspace:*"
+    "@trustless-agentkit/sdk": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.7.0",

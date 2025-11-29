@@ -1,5 +1,5 @@
 /**
- * End-to-End Test for Jolt Atlas Demo
+ * End-to-End Test for Trustless AgentKit Demo
  *
  * Tests all working components:
  * 1. TypeScript SDK imports and core functionality
@@ -42,7 +42,7 @@ const MEMORY_REGISTRY_ABI = [
 
 async function main() {
   console.log("=".repeat(60));
-  console.log("JOLT ATLAS END-TO-END TEST");
+  console.log("TRUSTLESS AGENTKIT END-TO-END TEST");
   console.log("=".repeat(60));
   console.log();
 
