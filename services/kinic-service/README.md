@@ -2,6 +2,8 @@
 
 On-chain vector database for Coinbase AgentKit agents. Provides verifiable, tamper-proof memory storage with zkML embedding proofs.
 
+Built with [Kinic CLI](https://github.com/ICME-Lab/kinic-cli) | zkML proofs via [Jolt Atlas](https://github.com/ICME-Lab/jolt-atlas)
+
 ## What is Kinic AI Memory?
 
 Kinic provides an **on-chain vector database** on the Internet Computer that gives AI agents:

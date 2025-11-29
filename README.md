@@ -20,8 +20,8 @@ Coinbase is building the rails for [agentic commerce](https://www.coinbase.com/d
 
 | Pillar | Technology | What It Provides |
 |--------|------------|------------------|
-| **Verifiable Inference** | zkML (Jolt Atlas) | Cryptographic proof that AI model inference ran correctly |
-| **Verifiable Memory** | Kinic + Base | On-chain vector DB (Kinic) with Merkle commitments (Base) |
+| **Verifiable Inference** | zkML ([Jolt Atlas](https://github.com/ICME-Lab/jolt-atlas)) | Cryptographic proof that AI model inference ran correctly |
+| **Verifiable Memory** | [Kinic](https://github.com/ICME-Lab/kinic-cli) + Base | On-chain vector DB (Kinic) with Merkle commitments (Base) |
 
 **Why both?** Verifiable inference alone proves the model ran correctly *now*, but says nothing about the context it used. Verifiable memory alone proves data wasn't tampered with, but says nothing about how it was processed. Together, they're mutually reinforcing: verified memories feed into verified inference, creating an end-to-end auditable chain from stored knowledge to final decision.
 
@@ -462,7 +462,8 @@ See [`services/kinic-service/README.md`](services/kinic-service/README.md) for d
 - [AgentKit Documentation](https://docs.cdp.coinbase.com/agent-kit/welcome)
 - [x402 Payment Protocol](https://github.com/coinbase/x402)
 - [ERC-8004 Trustless Agents](https://8004.org)
-- [Kinic AI Memory](https://kinic.io)
+- [Jolt Atlas (zkML)](https://github.com/ICME-Lab/jolt-atlas)
+- [Kinic CLI](https://github.com/ICME-Lab/kinic-cli)
 
 ## Contributing
 
