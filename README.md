@@ -112,6 +112,45 @@ As AgentKit scales to millions of agents, **Base becomes the trust infrastructur
 
 Every agent transaction builds on-chain reputation. Every zkML proof adds to the trust graph. **Base becomes the source of truth for agent trustworthiness.**
 
+## 5-Minute Quickstart
+
+### Install
+
+```bash
+npm install @trustless-agentkit/sdk
+```
+
+### Try It (3 lines)
+
+```typescript
+import { withZkGuardrail } from '@trustless-agentkit/sdk';
+
+// Wrap ANY function with verifiable execution
+const verifiableAction = withZkGuardrail(myAction, { proofMode: 'always' });
+const result = await verifiableAction({ to: '0x...', amount: 100 });
+
+console.log(result.guardrail.proof); // '0x...' - cryptographic proof it ran correctly
+```
+
+### Add Verifiable Memory (2 more lines)
+
+```typescript
+import { AgentMemory, StorageType } from '@trustless-agentkit/sdk';
+
+const memory = new AgentMemory({ stores: [{ type: StorageType.InMemory }] });
+await memory.insert({ content: 'User prefers low-risk trades', metadata: { type: 'preference' } });
+const history = await memory.search({ query: 'risk preferences' });
+```
+
+### Or: Scaffold a Full Project
+
+```bash
+npx create-trustless-agent my-agent
+cd my-agent && npm run dev
+```
+
+---
+
 ## Interactive Demo
 
 See the full A2A transaction flow in action:
