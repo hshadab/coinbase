@@ -77,6 +77,59 @@ Together, they enable **trustless** agent-to-agent commerce—no trust in operat
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+## Why Verifiability Matters
+
+Without verifiable inference, agent commerce has a fatal flaw:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          THE ATTACK TRUSTLESS PREVENTS                          │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  WITHOUT Trustless AgentKit:              WITH Trustless AgentKit:              │
+│  ─────────────────────────────            ───────────────────────               │
+│  ✗ Agent claims to run AI model           ✓ Agent runs model in zkVM           │
+│  ✗ Actually returns hardcoded data        ✓ SNARK proves exact execution       │
+│  ✗ Buyer pays for fake analysis           ✓ Proof verified before payment      │
+│  ✗ No way to detect fraud                 ✓ Fraud cryptographically impossible │
+│  ✗ No recourse after payment              ✓ Full audit trail on Base           │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+> **The core insight:** An agent can *claim* anything. With zkML, it can *prove* it.
+
+## Base: The Trust Layer for the Agent Economy
+
+As AgentKit scales to millions of agents, **Base becomes the trust infrastructure**:
+
+| Component | Role | Why Base |
+|-----------|------|----------|
+| **Agent Identity** | ERC-721 NFT per agent | Portable across all Base apps |
+| **Reputation Scores** | On-chain feedback history | Composable with DeFi/lending |
+| **Validation Proofs** | zkML attestations stored | Permanent, verifiable record |
+| **Memory Commitments** | Merkle roots for agent knowledge | Efficient, tamper-proof |
+
+Every agent transaction builds on-chain reputation. Every zkML proof adds to the trust graph. **Base becomes the source of truth for agent trustworthiness.**
+
+## Interactive Demo
+
+See the full A2A transaction flow in action:
+
+```bash
+# Run the interactive web demo
+cd demo && npx serve . -p 3000
+
+# Then open http://localhost:3000
+```
+
+The demo shows:
+- Agent discovery via Kinic semantic search
+- Trust verification via ERC-8004 registries
+- x402 micropayment flow
+- zkML proof generation and verification
+- Memory commitment updates on Base
+
 ## What You Get
 
 | Feature | What It Does | Why It Matters |
@@ -274,7 +327,11 @@ contracts/src/erc8004/           # On-chain registries (Base Sepolia)
 
 services/kinic-service/          # On-chain vector database (IC)
 prover-service/                  # Rust zkML prover (Jolt Atlas)
-examples/agentkit-demo/          # Interactive demos
+
+demo/                            # Interactive web UI demo
+└── index.html                   # Full A2A transaction visualization
+
+examples/agentkit-demo/          # CLI demos
 ├── index.ts                     # Basic guardrails demo (zkML + Kinic)
 ├── marketplace-demo.ts          # Full A2A marketplace demo
 ├── memory-test.ts               # Kinic + Base integration test
