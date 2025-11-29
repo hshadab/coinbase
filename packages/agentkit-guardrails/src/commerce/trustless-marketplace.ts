@@ -258,7 +258,10 @@ export class TrustlessMarketplace {
    */
   async getMyAgentId(): Promise<number> {
     if (!this.initialized) await this.initialize();
-    return this.myAgentId!;
+    if (this.myAgentId === undefined) {
+      throw new Error('Agent ID not set after initialization');
+    }
+    return this.myAgentId;
   }
 
   // ==========================================================================

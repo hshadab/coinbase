@@ -10,7 +10,7 @@
  * @module commerce/agent-payment-rails
  */
 
-import { ethers, Contract, Signer } from "ethers";
+import { ethers, Contract, Signer, Log, EventLog } from "ethers";
 
 // ============================================================================
 // Types
@@ -232,8 +232,8 @@ export class AgentPaymentRails {
 
     // Extract agentId from Registered event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "Registered"
-    );
+      (log: Log | EventLog) => (log as EventLog).fragment?.name === "Registered"
+    ) as EventLog | undefined;
     if (event) {
       this.myAgentId = Number(event.args[0]);
       return this.myAgentId;
@@ -408,10 +408,10 @@ export class AgentPaymentRails {
 
     // Extract attestation hash from event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "ZkmlAttestationPosted"
-    );
+      (log: Log | EventLog) => (log as EventLog).fragment?.name === "ZkmlAttestationPosted"
+    ) as EventLog | undefined;
 
-    return event?.args[0] || ethers.ZeroHash;
+    return event?.args?.[0] || ethers.ZeroHash;
   }
 
   /**
@@ -721,11 +721,11 @@ export class AgentPaymentRails {
 
     // Extract escrow ID from event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "EscrowCreated"
-    );
+      (log: Log | EventLog) => (log as EventLog).fragment?.name === "EscrowCreated"
+    ) as EventLog | undefined;
 
     return {
-      escrowId: event?.args[0] || ethers.ZeroHash,
+      escrowId: event?.args?.[0] || ethers.ZeroHash,
       fromAgentId: myAgentId,
       toAgentId: params.toAgentId,
       amount: params.amount,

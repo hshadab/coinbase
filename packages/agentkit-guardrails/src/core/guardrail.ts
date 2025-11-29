@@ -160,18 +160,16 @@ export class Guardrail {
     // Handle rejection
     if (guardrailResult.decision === 'reject') {
       if (this.config.onModelReject === 'block') {
-        const error = new Error(
-          `Action blocked by guardrail: ${action.actionType} rejected with confidence ${guardrailResult.confidence.toFixed(3)}`
-        ) as GuardrailBlockedError;
-        error.name = 'GuardrailBlockedError';
-        (error as any).guardrailResult = guardrailResult;
-        (error as any).actionContext = action;
-        throw error;
+        throw new GuardrailBlockedError(
+          `Action blocked by guardrail: ${action.actionType} rejected with confidence ${guardrailResult.confidence.toFixed(3)}`,
+          guardrailResult,
+          action
+        );
       }
 
       if (this.config.onModelReject === 'warn') {
         console.warn(
-          `[JoltAtlas] Action would be rejected: ${action.actionType}`,
+          `[TrustlessAgentKit] Action would be rejected: ${action.actionType}`,
           { decision: guardrailResult.decision, confidence: guardrailResult.confidence }
         );
       }
@@ -180,13 +178,11 @@ export class Guardrail {
     // Handle review decision
     if (guardrailResult.decision === 'review') {
       if (this.config.onModelReject === 'block') {
-        const error = new Error(
-          `Action requires review: ${action.actionType}`
-        ) as GuardrailBlockedError;
-        error.name = 'GuardrailBlockedError';
-        (error as any).guardrailResult = guardrailResult;
-        (error as any).actionContext = action;
-        throw error;
+        throw new GuardrailBlockedError(
+          `Action requires review: ${action.actionType}`,
+          guardrailResult,
+          action
+        );
       }
     }
 

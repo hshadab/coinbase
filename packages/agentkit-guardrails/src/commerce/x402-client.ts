@@ -112,6 +112,16 @@ export const USDC_ADDRESSES: Record<string, string> = {
 };
 
 /**
+ * Chain IDs by network name
+ */
+const CHAIN_IDS: Record<string, number> = {
+  'base': 8453,
+  'base-sepolia': 84532,
+  'ethereum': 1,
+  'sepolia': 11155111,
+};
+
+/**
  * EIP-3009 domain type for signing
  */
 const EIP3009_DOMAIN = {
@@ -176,6 +186,13 @@ export class X402Client {
       this.signerAddress = await this.signer.getAddress();
     }
     return this.signerAddress;
+  }
+
+  /**
+   * Get the chain ID for the current network
+   */
+  private getChainId(): number {
+    return CHAIN_IDS[this.network] || 84532; // Default to Base Sepolia
   }
 
   /**
@@ -406,7 +423,33 @@ export class X402Client {
         return { valid: false, error: 'Payment authorization expired' };
       }
 
-      // TODO: Verify signature on-chain or via facilitator
+      // Verify signature by recovering signer address
+      const domain = {
+        name: 'USD Coin',
+        version: '2',
+        chainId: this.getChainId(),
+        verifyingContract: this.defaultAsset,
+      };
+
+      const message = {
+        from: decoded.payload.authorization.from,
+        to: decoded.payload.authorization.to,
+        value: decoded.payload.authorization.value,
+        validAfter: decoded.payload.authorization.validAfter,
+        validBefore: decoded.payload.authorization.validBefore,
+        nonce: decoded.payload.authorization.nonce,
+      };
+
+      const recoveredAddress = ethers.verifyTypedData(
+        domain,
+        TRANSFER_WITH_AUTHORIZATION_TYPES,
+        message,
+        decoded.payload.signature
+      );
+
+      if (recoveredAddress.toLowerCase() !== decoded.payload.authorization.from.toLowerCase()) {
+        return { valid: false, error: 'Invalid payment signature' };
+      }
 
       return {
         valid: true,
