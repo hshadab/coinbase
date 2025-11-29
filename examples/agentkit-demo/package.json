@@ -11,7 +11,7 @@
     "merkle": "tsx merkle-test.ts"
   },
   "dependencies": {
-    "@jolt-atlas/agentkit-guardrails": "workspace:*"
+    "@trustless-agentkit/sdk": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.20.6",

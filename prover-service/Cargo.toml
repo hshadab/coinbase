@@ -1,8 +1,8 @@
 [package]
-name = "jolt-atlas-prover-service"
+name = "trustless-agentkit-prover"
 version = "0.1.0"
 edition = "2021"
-description = "HTTP prover service for Jolt Atlas zkML proofs"
+description = "HTTP prover service for Trustless AgentKit zkML proofs (powered by Jolt Atlas)"
 license = "MIT"
 
 [features]

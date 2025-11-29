@@ -91,7 +91,7 @@ export class ProofGenerator {
   constructor(config: ProverConfig = {}) {
     this.config = {
       mode: config.mode ?? 'auto',
-      proverEndpoint: config.proverEndpoint ?? process.env.JOLT_ATLAS_PROVER_URL,
+      proverEndpoint: config.proverEndpoint ?? process.env.TRUSTLESS_PROVER_URL,
       timeout: config.timeout ?? 30000,
       ...config,
     };

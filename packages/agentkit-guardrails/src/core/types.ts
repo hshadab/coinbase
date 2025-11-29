@@ -1,5 +1,5 @@
 /**
- * Core types for Jolt Atlas AgentKit Guardrails
+ * Core types for Trustless AgentKit Guardrails
  */
 
 /**
