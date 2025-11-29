@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trustless AgentKit | Verifiable AI Agents on Base</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       --coinbase-blue: #0052FF;
@@ -17,6 +17,21 @@
       --text-primary: #FFFFFF;
       --text-secondary: rgba(255, 255, 255, 0.7);
       --text-muted: rgba(255, 255, 255, 0.5);
+      --bg-gradient: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a1a2a 100%);
+      --card-bg: rgba(0, 0, 0, 0.3);
+      --header-bg: var(--glass-bg);
+    }
+
+    /* Light Mode */
+    [data-theme="light"] {
+      --glass-bg: rgba(0, 0, 0, 0.04);
+      --glass-border: rgba(0, 0, 0, 0.1);
+      --text-primary: #0a0a1a;
+      --text-secondary: rgba(10, 10, 26, 0.7);
+      --text-muted: rgba(10, 10, 26, 0.5);
+      --bg-gradient: linear-gradient(135deg, #f8f9fc 0%, #eef1f8 50%, #f0f4fa 100%);
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --header-bg: rgba(255, 255, 255, 0.8);
     }
 
     * {
@@ -26,11 +41,12 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a1a2a 100%);
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-gradient);
       min-height: 100vh;
       color: var(--text-primary);
       overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     /* Animated background */
@@ -69,12 +85,40 @@
       justify-content: space-between;
       align-items: center;
       backdrop-filter: blur(20px);
-      background: var(--glass-bg);
+      background: var(--header-bg);
       border-bottom: 1px solid var(--glass-border);
       position: sticky;
       top: 0;
       z-index: 100;
+      transition: background 0.3s ease;
     }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.3s ease;
+      margin-right: 16px;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.05);
+      border-color: var(--coinbase-blue);
+    }
+
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+
+    [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+    [data-theme="light"] .theme-toggle .icon-moon { display: none; }
 
     .logo {
       display: flex;
@@ -165,6 +209,12 @@
       background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    [data-theme="light"] .hero h1 {
+      background: linear-gradient(135deg, #0a0a1a 0%, rgba(10,10,26,0.8) 100%);
+      -webkit-background-clip: text;
       background-clip: text;
     }
 
@@ -330,11 +380,12 @@
 
     /* Agent Cards */
     .agent-card {
-      background: rgba(0, 0, 0, 0.3);
+      background: var(--card-bg);
       border: 1px solid var(--glass-border);
       border-radius: 16px;
       padding: 20px;
       margin-bottom: 16px;
+      transition: background 0.3s ease;
     }
 
     .agent-header {
@@ -396,22 +447,65 @@
     /* Transaction Flow */
     .tx-flow {
       position: relative;
+      padding-left: 20px;
+    }
+
+    /* Timeline connector line */
+    .tx-flow::before {
+      content: '';
+      position: absolute;
+      left: 39px;
+      top: 20px;
+      bottom: 40px;
+      width: 2px;
+      background: linear-gradient(to bottom,
+        var(--glass-border) 0%,
+        var(--glass-border) 100%
+      );
+      border-radius: 1px;
+    }
+
+    .tx-flow.flow-active::before {
+      background: linear-gradient(to bottom,
+        var(--success-green) 0%,
+        var(--coinbase-blue) 50%,
+        var(--glass-border) 100%
+      );
+      animation: flowPulse 2s ease-in-out infinite;
+    }
+
+    .tx-flow.flow-complete::before {
+      background: linear-gradient(to bottom,
+        var(--success-green) 0%,
+        var(--success-green) 100%
+      );
+    }
+
+    @keyframes flowPulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
     }
 
     .tx-step {
       display: flex;
       gap: 16px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       opacity: 0.4;
-      transition: all 0.5s ease;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+    }
+
+    .tx-step:last-child {
+      margin-bottom: 0;
     }
 
     .tx-step.active {
       opacity: 1;
+      transform: translateX(4px);
     }
 
     .tx-step.completed {
-      opacity: 0.7;
+      opacity: 0.85;
     }
 
     .step-indicator {
@@ -426,12 +520,15 @@
       font-weight: 600;
       flex-shrink: 0;
       position: relative;
+      z-index: 2;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .tx-step.active .step-indicator {
       border-color: var(--coinbase-blue);
       background: rgba(0, 82, 255, 0.2);
       animation: stepPulse 1.5s infinite;
+      transform: scale(1.1);
     }
 
     .tx-step.completed .step-indicator {
@@ -442,11 +539,17 @@
     .tx-step.completed .step-indicator::after {
       content: '✓';
       color: var(--success-green);
+      font-size: 16px;
+    }
+
+    /* Hide step number when completed */
+    .tx-step.completed .step-indicator .step-num {
+      display: none;
     }
 
     @keyframes stepPulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(0, 82, 255, 0.4); }
-      50% { box-shadow: 0 0 0 10px rgba(0, 82, 255, 0); }
+      50% { box-shadow: 0 0 0 12px rgba(0, 82, 255, 0); }
     }
 
     .step-content {
@@ -466,12 +569,13 @@
     .step-detail {
       margin-top: 12px;
       padding: 12px;
-      background: rgba(0, 0, 0, 0.3);
+      background: var(--card-bg);
       border-radius: 10px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       color: var(--text-secondary);
       display: none;
+      transition: background 0.3s ease;
     }
 
     .tx-step.active .step-detail,
@@ -481,10 +585,11 @@
 
     /* Proof Panel */
     .proof-display {
-      background: rgba(0, 0, 0, 0.4);
+      background: var(--card-bg);
       border-radius: 12px;
       padding: 20px;
       font-family: 'JetBrains Mono', monospace;
+      transition: background 0.3s ease;
     }
 
     .proof-header {
@@ -511,11 +616,70 @@
     .proof-status.verified {
       background: rgba(0, 214, 50, 0.2);
       color: var(--success-green);
+      animation: verifiedPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .proof-status.pending {
       background: rgba(255, 149, 0, 0.2);
       color: var(--warning-orange);
+    }
+
+    @keyframes verifiedPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    /* Dramatic verification overlay */
+    .verification-flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(0, 214, 50, 0.3) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1000;
+      animation: flashIn 1s ease-out forwards;
+    }
+
+    @keyframes flashIn {
+      0% { opacity: 0; transform: scale(0.8); }
+      20% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0; transform: scale(1.5); }
+    }
+
+    /* Proof display verified state */
+    .proof-display.verified {
+      border: 2px solid var(--success-green);
+      box-shadow: 0 0 30px rgba(0, 214, 50, 0.3);
+      animation: proofVerified 0.8s ease-out;
+    }
+
+    @keyframes proofVerified {
+      0% { box-shadow: 0 0 0 rgba(0, 214, 50, 0); }
+      50% { box-shadow: 0 0 50px rgba(0, 214, 50, 0.5); }
+      100% { box-shadow: 0 0 30px rgba(0, 214, 50, 0.3); }
+    }
+
+    /* Success checkmark animation */
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, rgba(0, 214, 50, 0.2), rgba(0, 214, 50, 0.1));
+      border: 1px solid var(--success-green);
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--success-green);
+      animation: badgeSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes badgeSlideIn {
+      0% { opacity: 0; transform: translateY(-10px) scale(0.8); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .proof-content {
@@ -546,11 +710,12 @@
 
     /* Memory Panel */
     .memory-item {
-      background: rgba(0, 0, 0, 0.3);
+      background: var(--card-bg);
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 12px;
       border-left: 3px solid var(--success-green);
+      transition: background 0.3s ease;
     }
 
     .memory-item h5 {
@@ -584,6 +749,7 @@
     .merkle-tree {
       text-align: center;
       padding: 20px;
+      position: relative;
     }
 
     .merkle-node {
@@ -595,11 +761,30 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 10px;
       margin: 4px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .merkle-node:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(0, 82, 255, 0.3);
+      z-index: 10;
     }
 
     .merkle-node.root {
       background: rgba(0, 214, 50, 0.2);
       border-color: var(--success-green);
+      animation: rootGlow 3s ease-in-out infinite;
+    }
+
+    .merkle-node.root:hover {
+      box-shadow: 0 8px 25px rgba(0, 214, 50, 0.4);
+    }
+
+    @keyframes rootGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(0, 214, 50, 0.2); }
+      50% { box-shadow: 0 0 20px rgba(0, 214, 50, 0.4); }
     }
 
     .merkle-node.leaf {
@@ -607,8 +792,36 @@
       border-color: var(--glass-border);
     }
 
+    .merkle-node.leaf:hover {
+      border-color: var(--coinbase-blue);
+      box-shadow: 0 8px 25px rgba(0, 82, 255, 0.2);
+    }
+
+    .merkle-node.updating {
+      animation: nodeUpdate 0.6s ease-out;
+    }
+
+    @keyframes nodeUpdate {
+      0% { transform: scale(1); background: rgba(0, 214, 50, 0.2); }
+      50% { transform: scale(1.2); background: rgba(0, 214, 50, 0.5); box-shadow: 0 0 30px rgba(0, 214, 50, 0.6); }
+      100% { transform: scale(1); background: rgba(0, 214, 50, 0.2); }
+    }
+
     .merkle-level {
       margin-bottom: 16px;
+      position: relative;
+    }
+
+    /* Connection lines between merkle nodes */
+    .merkle-tree::before {
+      content: '';
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      width: 2px;
+      height: 20px;
+      background: linear-gradient(to bottom, var(--success-green), var(--coinbase-blue));
+      opacity: 0.5;
     }
 
     /* Bottom Stats */
@@ -775,6 +988,10 @@
       <div class="logo-text">Trustless <span>AgentKit</span></div>
     </div>
     <div class="header-badges">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+        <span class="icon-moon">🌙</span>
+        <span class="icon-sun">☀️</span>
+      </button>
       <div class="badge coinbase">Built for AgentKit</div>
       <div class="badge base">Deployed on Base</div>
       <div class="badge live">Base Sepolia Live</div>
@@ -845,9 +1062,9 @@
             </div>
           </div>
 
-          <div class="tx-flow">
+          <div class="tx-flow" id="buyerFlow">
             <div class="tx-step" id="step1">
-              <div class="step-indicator">1</div>
+              <div class="step-indicator"><span class="step-num">1</span></div>
               <div class="step-content">
                 <h4>Discover Service via Kinic</h4>
                 <p>Semantic search for "ETH sentiment analysis"</p>
@@ -857,7 +1074,7 @@
               </div>
             </div>
             <div class="tx-step" id="step2">
-              <div class="step-indicator">2</div>
+              <div class="step-indicator"><span class="step-num">2</span></div>
               <div class="step-content">
                 <h4>Verify Agent via ERC-8004</h4>
                 <p>Check identity, reputation, validation history</p>
@@ -869,7 +1086,7 @@
               </div>
             </div>
             <div class="tx-step" id="step3">
-              <div class="step-indicator">3</div>
+              <div class="step-indicator"><span class="step-num">3</span></div>
               <div class="step-content">
                 <h4>Pay via x402 Protocol</h4>
                 <p>HTTP micropayment with EIP-3009 USDC</p>
@@ -918,9 +1135,9 @@
             </div>
           </div>
 
-          <div class="tx-flow">
+          <div class="tx-flow" id="sellerFlow">
             <div class="tx-step" id="step4">
-              <div class="step-indicator">4</div>
+              <div class="step-indicator"><span class="step-num">4</span></div>
               <div class="step-content">
                 <h4>Run AI Inference in zkVM</h4>
                 <p>Execute sentiment model with Jolt Atlas</p>
@@ -932,7 +1149,7 @@
               </div>
             </div>
             <div class="tx-step" id="step5">
-              <div class="step-indicator">5</div>
+              <div class="step-indicator"><span class="step-num">5</span></div>
               <div class="step-content">
                 <h4>Return Result + zkML Proof</h4>
                 <p>Cryptographic proof of correct inference</p>
@@ -943,7 +1160,7 @@
               </div>
             </div>
             <div class="tx-step" id="step6">
-              <div class="step-indicator">6</div>
+              <div class="step-indicator"><span class="step-num">6</span></div>
               <div class="step-content">
                 <h4>Record on Base + Kinic</h4>
                 <p>Post attestation, update memory commitment</p>
@@ -1105,6 +1322,23 @@
     let currentStep = 0;
     let demoInterval = null;
 
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+
+    // Initialize theme from localStorage
+    (function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    })();
+
     function resetDemo() {
       currentStep = 0;
       if (demoInterval) {
@@ -1121,16 +1355,22 @@
       // Reset proof panel
       document.getElementById('proofStatus').textContent = 'Pending';
       document.getElementById('proofStatus').className = 'proof-status pending';
+      document.querySelector('.proof-display').classList.remove('verified');
       document.getElementById('modelHash').textContent = 'Waiting...';
       document.getElementById('inputHash').textContent = 'Waiting...';
       document.getElementById('outputHash').textContent = 'Waiting...';
       document.getElementById('proofValue').textContent = 'Waiting...';
       document.getElementById('verifiedStatus').textContent = '—';
+      document.getElementById('verifiedStatus').style.color = '';
 
       // Reset merkle
       document.getElementById('newMemory').textContent = '+ New';
       document.getElementById('newMemory').style.borderColor = 'var(--glass-border)';
       document.getElementById('merkleRoot').textContent = 'Root: 0x73bd...fd49';
+
+      // Reset flow states
+      document.getElementById('buyerFlow').classList.remove('flow-active', 'flow-complete');
+      document.getElementById('sellerFlow').classList.remove('flow-active', 'flow-complete');
     }
 
     function runDemo() {
@@ -1139,6 +1379,7 @@
       const steps = [
         () => {
           document.getElementById('step1').classList.add('active');
+          document.getElementById('buyerFlow').classList.add('flow-active');
         },
         () => {
           document.getElementById('step1').classList.remove('active');
@@ -1153,7 +1394,10 @@
         () => {
           document.getElementById('step3').classList.remove('active');
           document.getElementById('step3').classList.add('completed');
+          document.getElementById('buyerFlow').classList.remove('flow-active');
+          document.getElementById('buyerFlow').classList.add('flow-complete');
           document.getElementById('step4').classList.add('active');
+          document.getElementById('sellerFlow').classList.add('flow-active');
 
           // Start updating proof panel
           document.getElementById('proofStatus').textContent = 'Generating...';
@@ -1174,21 +1418,43 @@
           document.getElementById('step5').classList.add('completed');
           document.getElementById('step6').classList.add('active');
 
-          // Verify proof
+          // Dramatic verification effect
+          const flash = document.createElement('div');
+          flash.className = 'verification-flash';
+          document.body.appendChild(flash);
+          setTimeout(() => flash.remove(), 1000);
+
+          // Verify proof with animations
           document.getElementById('proofStatus').textContent = 'Verified ✓';
           document.getElementById('proofStatus').className = 'proof-status verified';
+          document.querySelector('.proof-display').classList.add('verified');
           document.getElementById('verifiedStatus').textContent = '✓ On-chain attestation posted';
           document.getElementById('verifiedStatus').style.color = 'var(--success-green)';
         },
         () => {
           document.getElementById('step6').classList.remove('active');
           document.getElementById('step6').classList.add('completed');
+          document.getElementById('sellerFlow').classList.remove('flow-active');
+          document.getElementById('sellerFlow').classList.add('flow-complete');
 
-          // Update merkle tree
-          document.getElementById('newMemory').textContent = 'Mem 4';
-          document.getElementById('newMemory').style.borderColor = 'var(--success-green)';
-          document.getElementById('merkleRoot').textContent = 'Root: 0xf8d8...dfec';
-          document.getElementById('merkleRoot').style.animation = 'stepPulse 0.5s';
+          // Update merkle tree with animation
+          const newMemory = document.getElementById('newMemory');
+          const merkleRoot = document.getElementById('merkleRoot');
+
+          newMemory.textContent = 'Mem 4';
+          newMemory.style.borderColor = 'var(--success-green)';
+          newMemory.classList.add('updating');
+
+          setTimeout(() => {
+            merkleRoot.textContent = 'Root: 0xf8d8...dfec';
+            merkleRoot.classList.add('updating');
+          }, 300);
+
+          // Clean up animation classes
+          setTimeout(() => {
+            newMemory.classList.remove('updating');
+            merkleRoot.classList.remove('updating');
+          }, 1000);
         }
       ];
 
