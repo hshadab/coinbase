@@ -1,0 +1,12 @@
+{
+  "name": "trustless-agentkit-demo-ui",
+  "version": "1.0.0",
+  "description": "Interactive UI demo for Trustless AgentKit",
+  "scripts": {
+    "start": "npx serve . -p 3000",
+    "dev": "npx serve . -p 3000 --no-clipboard"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

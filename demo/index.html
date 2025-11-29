@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trustless AgentKit | Verifiable AI Agents on Base</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --coinbase-blue: #0052FF;
+      --base-blue: #0052FF;
+      --success-green: #00D632;
+      --warning-orange: #FF9500;
+      --error-red: #FF3B30;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.5);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a1a2a 100%);
+      min-height: 100vh;
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .bg-animation::before {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      background: radial-gradient(circle at 30% 40%, rgba(0, 82, 255, 0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 60%, rgba(0, 214, 50, 0.1) 0%, transparent 40%),
+                  radial-gradient(circle at 50% 80%, rgba(0, 82, 255, 0.1) 0%, transparent 50%);
+      animation: bgPulse 15s ease-in-out infinite;
+    }
+
+    @keyframes bgPulse {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-5%, -5%) scale(1.1); }
+    }
+
+    /* Header */
+    header {
+      padding: 24px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(20px);
+      background: var(--glass-bg);
+      border-bottom: 1px solid var(--glass-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--coinbase-blue), var(--success-green));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .logo-text span {
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 12px;
+    }
+
+    .badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge.coinbase {
+      border-color: var(--coinbase-blue);
+      color: var(--coinbase-blue);
+    }
+
+    .badge.base {
+      border-color: var(--coinbase-blue);
+      background: rgba(0, 82, 255, 0.1);
+    }
+
+    .badge.live {
+      border-color: var(--success-green);
+    }
+
+    .badge.live::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--success-green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 80px 48px;
+      text-align: center;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--coinbase-blue), var(--success-green));
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .pillars {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .pillar {
+      padding: 24px 32px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+      min-width: 280px;
+    }
+
+    .pillar h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .pillar h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .pillar p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .pillar.inference { border-top: 3px solid var(--coinbase-blue); }
+    .pillar.memory { border-top: 3px solid var(--success-green); }
+
+    /* Main Demo Area */
+    .demo-container {
+      padding: 0 48px 80px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .demo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .demo-header h2 {
+      font-size: 28px;
+    }
+
+    .demo-controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--coinbase-blue), #0066FF);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(0, 82, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Workflow Grid */
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .workflow-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .panel-icon.blue { background: rgba(0, 82, 255, 0.2); }
+    .panel-icon.green { background: rgba(0, 214, 50, 0.2); }
+    .panel-icon.orange { background: rgba(255, 149, 0, 0.2); }
+    .panel-icon.purple { background: rgba(147, 51, 234, 0.2); }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .panel-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .panel-content {
+      padding: 24px;
+    }
+
+    /* Agent Cards */
+    .agent-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .agent-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .agent-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .agent-avatar.buyer { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+    .agent-avatar.seller { background: linear-gradient(135deg, #10B981, #059669); }
+
+    .agent-info h4 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .agent-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .agent-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      text-align: center;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Transaction Flow */
+    .tx-flow {
+      position: relative;
+    }
+
+    .tx-step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      opacity: 0.4;
+      transition: all 0.5s ease;
+    }
+
+    .tx-step.active {
+      opacity: 1;
+    }
+
+    .tx-step.completed {
+      opacity: 0.7;
+    }
+
+    .step-indicator {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass-bg);
+      border: 2px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .tx-step.active .step-indicator {
+      border-color: var(--coinbase-blue);
+      background: rgba(0, 82, 255, 0.2);
+      animation: stepPulse 1.5s infinite;
+    }
+
+    .tx-step.completed .step-indicator {
+      border-color: var(--success-green);
+      background: rgba(0, 214, 50, 0.2);
+    }
+
+    .tx-step.completed .step-indicator::after {
+      content: '✓';
+      color: var(--success-green);
+    }
+
+    @keyframes stepPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0, 82, 255, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(0, 82, 255, 0); }
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content h4 {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .step-detail {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: none;
+    }
+
+    .tx-step.active .step-detail,
+    .tx-step.completed .step-detail {
+      display: block;
+    }
+
+    /* Proof Panel */
+    .proof-display {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .proof-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .proof-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .proof-status {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .proof-status.verified {
+      background: rgba(0, 214, 50, 0.2);
+      color: var(--success-green);
+    }
+
+    .proof-status.pending {
+      background: rgba(255, 149, 0, 0.2);
+      color: var(--warning-orange);
+    }
+
+    .proof-content {
+      font-size: 11px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      word-break: break-all;
+    }
+
+    .proof-line {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .proof-label {
+      color: var(--coinbase-blue);
+      min-width: 100px;
+    }
+
+    .proof-value {
+      color: var(--text-primary);
+    }
+
+    .proof-value.hash {
+      color: var(--success-green);
+    }
+
+    /* Memory Panel */
+    .memory-item {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 3px solid var(--success-green);
+    }
+
+    .memory-item h5 {
+      font-size: 13px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .memory-item p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .memory-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .memory-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Merkle Tree Visualization */
+    .merkle-tree {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .merkle-node {
+      display: inline-block;
+      padding: 8px 16px;
+      background: rgba(0, 82, 255, 0.2);
+      border: 1px solid var(--coinbase-blue);
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      margin: 4px;
+    }
+
+    .merkle-node.root {
+      background: rgba(0, 214, 50, 0.2);
+      border-color: var(--success-green);
+    }
+
+    .merkle-node.leaf {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--glass-border);
+    }
+
+    .merkle-level {
+      margin-bottom: 16px;
+    }
+
+    /* Bottom Stats */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      padding: 40px 48px;
+      background: var(--glass-bg);
+      border-top: 1px solid var(--glass-border);
+      margin-top: 60px;
+    }
+
+    .stats-item {
+      text-align: center;
+    }
+
+    .stats-item .value {
+      font-size: 36px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, var(--coinbase-blue), var(--success-green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stats-item .label {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Attack Scenario */
+    .attack-panel {
+      grid-column: span 2;
+      background: linear-gradient(135deg, rgba(255, 59, 48, 0.1), rgba(255, 149, 0, 0.1));
+      border: 1px solid rgba(255, 59, 48, 0.3);
+    }
+
+    .attack-panel .panel-header {
+      border-bottom-color: rgba(255, 59, 48, 0.3);
+    }
+
+    .attack-scenario {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .scenario-box {
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .scenario-box.without {
+      background: rgba(255, 59, 48, 0.1);
+      border: 1px solid rgba(255, 59, 48, 0.3);
+    }
+
+    .scenario-box.with {
+      background: rgba(0, 214, 50, 0.1);
+      border: 1px solid rgba(0, 214, 50, 0.3);
+    }
+
+    .scenario-box h4 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scenario-box ul {
+      list-style: none;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .scenario-box li {
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .scenario-box.without li::before {
+      content: '✗';
+      position: absolute;
+      left: 0;
+      color: var(--error-red);
+    }
+
+    .scenario-box.with li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--success-green);
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 48px;
+      text-align: center;
+      border-top: 1px solid var(--glass-border);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+      color: var(--coinbase-blue);
+    }
+
+    .footer-tagline {
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .footer-tagline strong {
+      color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .workflow-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .attack-panel {
+        grid-column: span 1;
+      }
+
+      .attack-scenario {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 36px; }
+      .pillars { flex-direction: column; align-items: center; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      header { padding: 16px 24px; }
+      .demo-container { padding: 0 24px 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-animation"></div>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">T</div>
+      <div class="logo-text">Trustless <span>AgentKit</span></div>
+    </div>
+    <div class="header-badges">
+      <div class="badge coinbase">Built for AgentKit</div>
+      <div class="badge base">Deployed on Base</div>
+      <div class="badge live">Base Sepolia Live</div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Verifiable AI Agents<br><span class="highlight">for the Agent Economy</span></h1>
+    <p>Every AI agent deserves a wallet. Every wallet deserves verifiable behavior. Trustless AgentKit brings cryptographic proofs to agent-to-agent commerce on Base.</p>
+
+    <div class="pillars">
+      <div class="pillar inference">
+        <h3>Pillar 1</h3>
+        <h2>Verifiable Inference</h2>
+        <p>zkML proves AI model ran correctly with Jolt Atlas SNARKs</p>
+      </div>
+      <div class="pillar memory">
+        <h3>Pillar 2</h3>
+        <h2>Verifiable Memory</h2>
+        <p>Kinic stores data, Base stores Merkle commitments</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="demo-container">
+    <div class="demo-header">
+      <h2>Live A2A Transaction Demo</h2>
+      <div class="demo-controls">
+        <button class="btn btn-secondary" onclick="resetDemo()">Reset</button>
+        <button class="btn btn-primary" onclick="runDemo()">
+          <span>▶</span> Run Full Transaction
+        </button>
+      </div>
+    </div>
+
+    <div class="workflow-grid">
+      <!-- Agent Buyer Panel -->
+      <div class="workflow-panel">
+        <div class="panel-header">
+          <div class="panel-icon blue">🤖</div>
+          <div>
+            <div class="panel-title">Agent A (Buyer)</div>
+            <div class="panel-subtitle">Data Analysis Consumer</div>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div class="agent-card">
+            <div class="agent-header">
+              <div class="agent-avatar buyer">🔍</div>
+              <div class="agent-info">
+                <h4>Market Research Agent</h4>
+                <p>Agent ID: #1847 • CDP Wallet</p>
+              </div>
+            </div>
+            <div class="agent-stats">
+              <div class="stat">
+                <div class="stat-value" style="color: var(--coinbase-blue);">$1,250</div>
+                <div class="stat-label">USDC Balance</div>
+              </div>
+              <div class="stat">
+                <div class="stat-value">94</div>
+                <div class="stat-label">Trust Score</div>
+              </div>
+              <div class="stat">
+                <div class="stat-value">127</div>
+                <div class="stat-label">Transactions</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tx-flow">
+            <div class="tx-step" id="step1">
+              <div class="step-indicator">1</div>
+              <div class="step-content">
+                <h4>Discover Service via Kinic</h4>
+                <p>Semantic search for "ETH sentiment analysis"</p>
+                <div class="step-detail">
+                  <code>kinic.search({ query: "ETH sentiment analysis", minTrust: 80 })</code>
+                </div>
+              </div>
+            </div>
+            <div class="tx-step" id="step2">
+              <div class="step-indicator">2</div>
+              <div class="step-content">
+                <h4>Verify Agent via ERC-8004</h4>
+                <p>Check identity, reputation, validation history</p>
+                <div class="step-detail">
+                  IdentityRegistry.ownerOf(2156) ✓<br>
+                  ReputationRegistry.getScore(2156) → 97<br>
+                  ValidationRegistry.getProofCount(2156) → 1,847
+                </div>
+              </div>
+            </div>
+            <div class="tx-step" id="step3">
+              <div class="step-indicator">3</div>
+              <div class="step-content">
+                <h4>Pay via x402 Protocol</h4>
+                <p>HTTP micropayment with EIP-3009 USDC</p>
+                <div class="step-detail">
+                  POST /api/analyze<br>
+                  402 Payment Required<br>
+                  X-Payment: [EIP-3009 Auth] → 1.00 USDC
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent Seller Panel -->
+      <div class="workflow-panel">
+        <div class="panel-header">
+          <div class="panel-icon green">🤖</div>
+          <div>
+            <div class="panel-title">Agent B (Seller)</div>
+            <div class="panel-subtitle">Data Analysis Provider</div>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div class="agent-card">
+            <div class="agent-header">
+              <div class="agent-avatar seller">📊</div>
+              <div class="agent-info">
+                <h4>Sentiment Analysis Agent</h4>
+                <p>Agent ID: #2156 • CDP Wallet</p>
+              </div>
+            </div>
+            <div class="agent-stats">
+              <div class="stat">
+                <div class="stat-value" style="color: var(--success-green);">$8,420</div>
+                <div class="stat-label">USDC Earned</div>
+              </div>
+              <div class="stat">
+                <div class="stat-value">97</div>
+                <div class="stat-label">Trust Score</div>
+              </div>
+              <div class="stat">
+                <div class="stat-value">1,847</div>
+                <div class="stat-label">Proofs Posted</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tx-flow">
+            <div class="tx-step" id="step4">
+              <div class="step-indicator">4</div>
+              <div class="step-content">
+                <h4>Run AI Inference in zkVM</h4>
+                <p>Execute sentiment model with Jolt Atlas</p>
+                <div class="step-detail">
+                  Model: sentiment-v2.onnx<br>
+                  Input: "ETH price action, 24h volume..."<br>
+                  Generating SNARK proof...
+                </div>
+              </div>
+            </div>
+            <div class="tx-step" id="step5">
+              <div class="step-indicator">5</div>
+              <div class="step-content">
+                <h4>Return Result + zkML Proof</h4>
+                <p>Cryptographic proof of correct inference</p>
+                <div class="step-detail">
+                  Result: { sentiment: "bullish", confidence: 0.87 }<br>
+                  Proof: 0x7a8f...3d2e (SNARK)
+                </div>
+              </div>
+            </div>
+            <div class="tx-step" id="step6">
+              <div class="step-indicator">6</div>
+              <div class="step-content">
+                <h4>Record on Base + Kinic</h4>
+                <p>Post attestation, update memory commitment</p>
+                <div class="step-detail">
+                  ValidationRegistry.postAttestation() ✓<br>
+                  MemoryRegistry.updateCommitment() ✓<br>
+                  Kinic.insert(interaction) ✓
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proof Verification Panel -->
+      <div class="workflow-panel">
+        <div class="panel-header">
+          <div class="panel-icon purple">🔐</div>
+          <div>
+            <div class="panel-title">zkML Proof Verification</div>
+            <div class="panel-subtitle">Jolt Atlas SNARK</div>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div class="proof-display">
+            <div class="proof-header">
+              <span class="proof-title">Inference Proof</span>
+              <span class="proof-status pending" id="proofStatus">Pending</span>
+            </div>
+            <div class="proof-content" id="proofContent">
+              <div class="proof-line">
+                <span class="proof-label">Model Hash:</span>
+                <span class="proof-value hash" id="modelHash">Waiting...</span>
+              </div>
+              <div class="proof-line">
+                <span class="proof-label">Input Hash:</span>
+                <span class="proof-value hash" id="inputHash">Waiting...</span>
+              </div>
+              <div class="proof-line">
+                <span class="proof-label">Output Hash:</span>
+                <span class="proof-value hash" id="outputHash">Waiting...</span>
+              </div>
+              <div class="proof-line">
+                <span class="proof-label">Proof:</span>
+                <span class="proof-value" id="proofValue">Waiting...</span>
+              </div>
+              <div class="proof-line">
+                <span class="proof-label">Verified:</span>
+                <span class="proof-value" id="verifiedStatus">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Memory Integrity Panel -->
+      <div class="workflow-panel">
+        <div class="panel-header">
+          <div class="panel-icon orange">🌳</div>
+          <div>
+            <div class="panel-title">Memory Integrity (Merkle)</div>
+            <div class="panel-subtitle">Kinic + Base</div>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div class="merkle-tree" id="merkleTree">
+            <div class="merkle-level">
+              <div class="merkle-node root" id="merkleRoot">Root: 0x73bd...fd49</div>
+            </div>
+            <div class="merkle-level">
+              <div class="merkle-node">0x58a4...f4dc</div>
+              <div class="merkle-node">0x8e40...f59d</div>
+            </div>
+            <div class="merkle-level">
+              <div class="merkle-node leaf">Mem 1</div>
+              <div class="merkle-node leaf">Mem 2</div>
+              <div class="merkle-node leaf">Mem 3</div>
+              <div class="merkle-node leaf" id="newMemory">+ New</div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 16px;">
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Root stored on Base • Leaves in Kinic • O(log n) proofs
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attack Scenario Panel -->
+      <div class="workflow-panel attack-panel">
+        <div class="panel-header">
+          <div class="panel-icon" style="background: rgba(255, 59, 48, 0.2);">⚠️</div>
+          <div>
+            <div class="panel-title">Why Verifiability Matters</div>
+            <div class="panel-subtitle">The attack Trustless AgentKit prevents</div>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div class="attack-scenario">
+            <div class="scenario-box without">
+              <h4><span style="color: var(--error-red);">✗</span> Without Trustless AgentKit</h4>
+              <ul>
+                <li>Agent claims to run sentiment model</li>
+                <li>Actually returns hardcoded "bullish" response</li>
+                <li>Buyer pays for fake analysis</li>
+                <li>No way to detect fraud</li>
+                <li>No recourse after payment</li>
+              </ul>
+            </div>
+            <div class="scenario-box with">
+              <h4><span style="color: var(--success-green);">✓</span> With Trustless AgentKit</h4>
+              <ul>
+                <li>Agent must run model in zkVM</li>
+                <li>SNARK proves exact model executed</li>
+                <li>Proof verified before payment released</li>
+                <li>Fraud cryptographically impossible</li>
+                <li>Full audit trail on Base</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats-bar">
+    <div class="stats-item">
+      <div class="value">~2.4s</div>
+      <div class="label">Proof Generation</div>
+    </div>
+    <div class="stats-item">
+      <div class="value">~200ms</div>
+      <div class="label">Kinic Search</div>
+    </div>
+    <div class="stats-item">
+      <div class="value">$0.001</div>
+      <div class="label">Per Transaction (Base)</div>
+    </div>
+    <div class="stats-item">
+      <div class="value">∞</div>
+      <div class="label">Scalable Agents</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="https://github.com/hshadab/coinbase">GitHub</a>
+      <a href="https://docs.cdp.coinbase.com/agent-kit/welcome">AgentKit Docs</a>
+      <a href="https://github.com/coinbase/x402">x402 Protocol</a>
+      <a href="https://kinic.io">Kinic</a>
+      <a href="https://base.org">Base</a>
+    </div>
+    <div class="footer-tagline">
+      <strong>Verifiable Inference + Verifiable Memory = Trustless Agents</strong>
+    </div>
+  </footer>
+
+  <script>
+    let currentStep = 0;
+    let demoInterval = null;
+
+    function resetDemo() {
+      currentStep = 0;
+      if (demoInterval) {
+        clearInterval(demoInterval);
+        demoInterval = null;
+      }
+
+      // Reset all steps
+      for (let i = 1; i <= 6; i++) {
+        const step = document.getElementById(`step${i}`);
+        step.classList.remove('active', 'completed');
+      }
+
+      // Reset proof panel
+      document.getElementById('proofStatus').textContent = 'Pending';
+      document.getElementById('proofStatus').className = 'proof-status pending';
+      document.getElementById('modelHash').textContent = 'Waiting...';
+      document.getElementById('inputHash').textContent = 'Waiting...';
+      document.getElementById('outputHash').textContent = 'Waiting...';
+      document.getElementById('proofValue').textContent = 'Waiting...';
+      document.getElementById('verifiedStatus').textContent = '—';
+
+      // Reset merkle
+      document.getElementById('newMemory').textContent = '+ New';
+      document.getElementById('newMemory').style.borderColor = 'var(--glass-border)';
+      document.getElementById('merkleRoot').textContent = 'Root: 0x73bd...fd49';
+    }
+
+    function runDemo() {
+      resetDemo();
+
+      const steps = [
+        () => {
+          document.getElementById('step1').classList.add('active');
+        },
+        () => {
+          document.getElementById('step1').classList.remove('active');
+          document.getElementById('step1').classList.add('completed');
+          document.getElementById('step2').classList.add('active');
+        },
+        () => {
+          document.getElementById('step2').classList.remove('active');
+          document.getElementById('step2').classList.add('completed');
+          document.getElementById('step3').classList.add('active');
+        },
+        () => {
+          document.getElementById('step3').classList.remove('active');
+          document.getElementById('step3').classList.add('completed');
+          document.getElementById('step4').classList.add('active');
+
+          // Start updating proof panel
+          document.getElementById('proofStatus').textContent = 'Generating...';
+          document.getElementById('modelHash').textContent = '0x7f83b1657ff1fc5...';
+        },
+        () => {
+          document.getElementById('step4').classList.remove('active');
+          document.getElementById('step4').classList.add('completed');
+          document.getElementById('step5').classList.add('active');
+
+          // Update proof panel
+          document.getElementById('inputHash').textContent = '0x3d4e2f1a8b9c0d7...';
+          document.getElementById('outputHash').textContent = '0x9a8b7c6d5e4f3a2...';
+          document.getElementById('proofValue').textContent = '0x7a8f9b2c3d4e5f6a7b8c9d0e1f2a3b4c...3d2e';
+        },
+        () => {
+          document.getElementById('step5').classList.remove('active');
+          document.getElementById('step5').classList.add('completed');
+          document.getElementById('step6').classList.add('active');
+
+          // Verify proof
+          document.getElementById('proofStatus').textContent = 'Verified ✓';
+          document.getElementById('proofStatus').className = 'proof-status verified';
+          document.getElementById('verifiedStatus').textContent = '✓ On-chain attestation posted';
+          document.getElementById('verifiedStatus').style.color = 'var(--success-green)';
+        },
+        () => {
+          document.getElementById('step6').classList.remove('active');
+          document.getElementById('step6').classList.add('completed');
+
+          // Update merkle tree
+          document.getElementById('newMemory').textContent = 'Mem 4';
+          document.getElementById('newMemory').style.borderColor = 'var(--success-green)';
+          document.getElementById('merkleRoot').textContent = 'Root: 0xf8d8...dfec';
+          document.getElementById('merkleRoot').style.animation = 'stepPulse 0.5s';
+        }
+      ];
+
+      let stepIndex = 0;
+      demoInterval = setInterval(() => {
+        if (stepIndex < steps.length) {
+          steps[stepIndex]();
+          stepIndex++;
+        } else {
+          clearInterval(demoInterval);
+        }
+      }, 1500);
+    }
+
+    // Auto-run demo on load after a short delay
+    setTimeout(() => {
+      runDemo();
+    }, 2000);
+  </script>
+</body>
+</html>
