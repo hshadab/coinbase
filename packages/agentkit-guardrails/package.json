@@ -19,14 +19,16 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "ethers": "^6.15.0",
@@ -56,11 +58,23 @@
     "guardrails",
     "zero-knowledge",
     "ai-agents",
-    "crypto"
+    "crypto",
+    "verifiable",
+    "trustless",
+    "base",
+    "kinic"
   ],
+  "author": "Trustless AgentKit Contributors",
+  "homepage": "https://github.com/hshadab/coinbase#readme",
+  "bugs": {
+    "url": "https://github.com/hshadab/coinbase/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hshadab/coinbase"
+    "url": "git+https://github.com/hshadab/coinbase.git"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -1,0 +1,32 @@
+{
+  "name": "create-trustless-agent",
+  "version": "0.1.0",
+  "description": "Create a new Trustless AgentKit project with verifiable compute and memory",
+  "bin": {
+    "create-trustless-agent": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "template"
+  ],
+  "keywords": [
+    "create",
+    "trustless",
+    "agentkit",
+    "coinbase",
+    "zkml",
+    "ai-agents",
+    "scaffold",
+    "template"
+  ],
+  "author": "Trustless AgentKit Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hshadab/coinbase.git"
+  },
+  "homepage": "https://github.com/hshadab/coinbase#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
