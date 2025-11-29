@@ -23,6 +23,8 @@ Coinbase is building the rails for [agentic commerce](https://www.coinbase.com/d
 | **Verifiable Inference** | zkML (Jolt Atlas) | Cryptographic proof that AI model inference ran correctly |
 | **Verifiable Memory** | Kinic + Base | On-chain vector DB (Kinic) with Merkle commitments (Base) |
 
+**Why both?** Verifiable inference alone proves the model ran correctly *now*, but says nothing about the context it used. Verifiable memory alone proves data wasn't tampered with, but says nothing about how it was processed. Together, they're mutually reinforcing: verified memories feed into verified inference, creating an end-to-end auditable chain from stored knowledge to final decision.
+
 Together, they enable **trustless** agent-to-agent commerce—no trust in operators required.
 
 ```
