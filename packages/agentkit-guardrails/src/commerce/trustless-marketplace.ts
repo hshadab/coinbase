@@ -28,19 +28,107 @@ import {
   type X402PaymentResult,
 } from './x402-client.js';
 import {
-  AgentMemory,
-  type AgentMemoryConfig,
-  type MemoryEntry,
-  type SearchResult,
-  StorageType,
-} from '../memory/index.js';
-import {
   checkAction,
   type GuardrailConfig,
   type GuardrailResult,
   type ActionContext,
 } from '../core/guardrail.js';
 import { PolicyDecision } from '../core/types.js';
+
+// ============================================================================
+// Simple Memory Store for Marketplace
+// ============================================================================
+
+/**
+ * Memory entry for marketplace storage
+ */
+interface MarketplaceMemoryEntry {
+  id: string;
+  content: string;
+  embedding: number[];
+  metadata: Record<string, string>;
+  timestamp: number;
+}
+
+/**
+ * Search result from marketplace memory
+ */
+interface MarketplaceSearchResult {
+  results: Array<{
+    id: string;
+    content: string;
+    score: number;
+    metadata: Record<string, string>;
+  }>;
+}
+
+/**
+ * Simple in-memory store for marketplace (Kinic integration placeholder)
+ */
+class MarketplaceMemory {
+  private entries: MarketplaceMemoryEntry[] = [];
+  private initialized = false;
+
+  async initialize(): Promise<void> {
+    this.initialized = true;
+  }
+
+  async insert(entry: {
+    content: string;
+    embedding: number[];
+    metadata: Record<string, string>;
+  }): Promise<{ id: string }> {
+    const id = `mem_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    this.entries.push({
+      id,
+      content: entry.content,
+      embedding: entry.embedding,
+      metadata: entry.metadata,
+      timestamp: Date.now(),
+    });
+    return { id };
+  }
+
+  async search(params: {
+    query: string;
+    limit?: number;
+    filter?: Record<string, string>;
+  }): Promise<MarketplaceSearchResult> {
+    const { query, limit = 10, filter } = params;
+    const queryLower = query.toLowerCase();
+
+    // Simple keyword matching (real implementation would use Kinic semantic search)
+    const filtered = this.entries.filter((e) => {
+      // Apply metadata filters
+      if (filter) {
+        for (const [key, value] of Object.entries(filter)) {
+          if (e.metadata[key] !== value) return false;
+        }
+      }
+      return true;
+    });
+
+    // Score by keyword relevance
+    const scored = filtered.map((e) => {
+      const contentLower = e.content.toLowerCase();
+      const words = queryLower.split(/\s+/);
+      const matchCount = words.filter((w) => contentLower.includes(w)).length;
+      const score = matchCount / Math.max(words.length, 1);
+      return { entry: e, score };
+    });
+
+    // Sort by score and limit
+    scored.sort((a, b) => b.score - a.score);
+    const results = scored.slice(0, limit).map(({ entry, score }) => ({
+      id: entry.id,
+      content: entry.content,
+      score,
+      metadata: entry.metadata,
+    }));
+
+    return { results };
+  }
+}
 
 // ============================================================================
 // Types
@@ -116,8 +204,6 @@ export interface MarketplaceConfig {
   erc8004: ERC8004Config;
   /** x402 client configuration */
   x402: Omit<X402ClientConfig, 'signer'>;
-  /** Kinic memory configuration */
-  memory?: Partial<AgentMemoryConfig>;
   /** Default guardrail configuration */
   guardrail?: Partial<GuardrailConfig>;
 }
@@ -194,7 +280,7 @@ export class TrustlessMarketplace {
   private config: MarketplaceConfig;
   private rails: AgentPaymentRails;
   private x402: X402Client;
-  private memory: AgentMemory;
+  private memory: MarketplaceMemory;
   private myAgentId: number | null = null;
   private initialized: boolean = false;
 
@@ -211,18 +297,8 @@ export class TrustlessMarketplace {
       ...config.x402,
     });
 
-    // Initialize Kinic memory
-    this.memory = new AgentMemory({
-      stores: [
-        {
-          type: StorageType.Kinic,
-          config: {
-            canisterId: config.memory?.stores?.[0]?.config?.canisterId || 'mock',
-          },
-        },
-      ],
-      ...config.memory,
-    });
+    // Initialize marketplace memory (in-memory store, can be replaced with Kinic)
+    this.memory = new MarketplaceMemory();
   }
 
   // ==========================================================================
@@ -258,7 +334,7 @@ export class TrustlessMarketplace {
    */
   async getMyAgentId(): Promise<number> {
     if (!this.initialized) await this.initialize();
-    if (this.myAgentId === undefined) {
+    if (this.myAgentId === null) {
       throw new Error('Agent ID not set after initialization');
     }
     return this.myAgentId;
@@ -797,7 +873,7 @@ export class TrustlessMarketplace {
   /**
    * Search memory for past interactions
    */
-  async searchMemory(query: string, limit: number = 10): Promise<SearchResult> {
+  async searchMemory(query: string, limit: number = 10): Promise<MarketplaceSearchResult> {
     return this.memory.search({ query, limit });
   }
 
@@ -811,7 +887,7 @@ export class TrustlessMarketplace {
   getComponents(): {
     rails: AgentPaymentRails;
     x402: X402Client;
-    memory: AgentMemory;
+    memory: MarketplaceMemory;
   } {
     return {
       rails: this.rails,

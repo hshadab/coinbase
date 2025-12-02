@@ -20,4 +20,4 @@ export {
   type SearchResult,
   type KnowledgeCredential,
   type MemoryIntegrityScore,
-} from "./agent-memory";
+} from "./agent-memory.js";
