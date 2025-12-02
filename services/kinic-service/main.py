@@ -46,10 +46,18 @@ load_dotenv()
 KINIC_IDENTITY = os.environ.get("KINIC_IDENTITY", "default")
 KINIC_USE_IC = os.environ.get("KINIC_USE_IC", "true").lower() == "true"
 
+# Constants
+DEFAULT_SEARCH_LIMIT = 5
+MOCK_SIMILARITY_SCORE = 0.85
+EMPTY_MERKLE_ROOT = "0" * 64
+MEMORY_ID_LENGTH = 16
+SERVICE_VERSION = "0.1.0"
+DEFAULT_PORT = 3002
+
 app = FastAPI(
     title="Kinic Memory Service",
     description="zkTAM wrapper for Jolt Atlas agent memory",
-    version="0.1.0"
+    version=SERVICE_VERSION
 )
 
 # CORS for TypeScript SDK
@@ -96,7 +104,7 @@ class InsertMemoryResponse(BaseModel):
 class SearchRequest(BaseModel):
     """Request to search memories"""
     query: str
-    limit: int = 5
+    limit: int = DEFAULT_SEARCH_LIMIT
 
 class SearchResult(BaseModel):
     """Single search result"""
@@ -133,13 +141,17 @@ class HealthResponse(BaseModel):
 # ============================================================================
 
 class MockMemoryStore:
-    """Mock memory store for development without Kinic"""
+    """Mock memory store for development without Kinic.
+
+    Provides a thread-safe in-memory implementation for testing.
+    """
 
     def __init__(self):
         self.stores: dict = {}  # memory_id -> memories list
         self.metadata: dict = {}  # memory_id -> metadata
 
-    def create(self, memory_id: str, name: str, description: str):
+    def create(self, memory_id: str, name: str, description: str) -> None:
+        """Create a new memory store."""
         self.stores[memory_id] = []
         self.metadata[memory_id] = {
             "name": name,
@@ -148,6 +160,7 @@ class MockMemoryStore:
         }
 
     def insert(self, memory_id: str, tag: str, content: str) -> dict:
+        """Insert a memory entry and return hashes."""
         content_hash = hashlib.sha256(content.encode()).hexdigest()
         # Mock embedding hash (in real Kinic, this is zkML-verified)
         embedding_hash = hashlib.sha256(f"embed:{content}".encode()).hexdigest()
@@ -170,7 +183,8 @@ class MockMemoryStore:
             "merkle_root": merkle_root
         }
 
-    def search(self, memory_id: str, query: str, limit: int = 5) -> list:
+    def search(self, memory_id: str, query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list:
+        """Search memories with mock similarity scoring."""
         # Mock search - just return recent memories
         # Real Kinic does semantic similarity with zkML-verified embeddings
         memories = self.stores.get(memory_id, [])
@@ -179,15 +193,16 @@ class MockMemoryStore:
             results.append({
                 "content": m["content"],
                 "tag": m["tag"],
-                "similarity": 0.85,  # Mock score
+                "similarity": MOCK_SIMILARITY_SCORE,
                 "content_hash": m["content_hash"]
             })
         return results
 
     def get_commitment(self, memory_id: str) -> dict:
+        """Get the current Merkle commitment for a memory store."""
         memories = self.stores.get(memory_id, [])
         all_hashes = [m["content_hash"] for m in memories]
-        merkle_root = hashlib.sha256("".join(all_hashes).encode()).hexdigest() if all_hashes else "0" * 64
+        merkle_root = hashlib.sha256("".join(all_hashes).encode()).hexdigest() if all_hashes else EMPTY_MERKLE_ROOT
 
         return {
             "merkle_root": merkle_root,
@@ -195,40 +210,54 @@ class MockMemoryStore:
             "last_updated": memories[-1]["timestamp"] if memories else None
         }
 
-# Global mock store
-mock_store = MockMemoryStore()
 
-# Global Kinic instance cache
-kinic_instances: dict = {}
+class KinicServiceState:
+    """Application state container for dependency injection.
 
-def get_kinic(identity: str = None, use_ic: bool = None) -> Optional["KinicMemories"]:
-    """Get or create Kinic instance.
-
-    Note: kinic-py requires a desktop environment with D-Bus/keyring support.
-    For headless servers, set KINIC_USE_IC=false and use mock mode.
+    Encapsulates all mutable state to avoid global variables and
+    enable proper testing and concurrent access patterns.
     """
-    if not KINIC_AVAILABLE:
-        return None
 
-    # Use defaults from environment
-    identity = identity or KINIC_IDENTITY
-    use_ic = use_ic if use_ic is not None else KINIC_USE_IC
+    def __init__(self):
+        self.mock_store = MockMemoryStore()
+        self.kinic_instances: dict = {}
+        self.operations_tested = False
+        self.operations_work = True
 
-    key = f"{identity}:{use_ic}"
-    if key not in kinic_instances:
-        try:
-            kinic_instances[key] = KinicMemories(identity=identity, ic=use_ic)
-            print(f"INFO: Created Kinic instance (identity={identity}, ic={use_ic})")
-        except Exception as e:
-            print(f"ERROR: Failed to create Kinic instance: {e}")
-            print("  Note: kinic-py requires D-Bus/keyring. Using mock mode.")
+    def get_kinic(self, identity: str = None, use_ic: bool = None) -> Optional["KinicMemories"]:
+        """Get or create Kinic instance.
+
+        Note: kinic-py requires a desktop environment with D-Bus/keyring support.
+        For headless servers, set KINIC_USE_IC=false and use mock mode.
+
+        Args:
+            identity: Kinic identity to use (defaults to KINIC_IDENTITY env var)
+            use_ic: Whether to use Internet Computer (defaults to KINIC_USE_IC env var)
+
+        Returns:
+            KinicMemories instance or None if unavailable
+        """
+        if not KINIC_AVAILABLE:
             return None
-    return kinic_instances[key]
+
+        # Use defaults from environment
+        identity = identity or KINIC_IDENTITY
+        use_ic = use_ic if use_ic is not None else KINIC_USE_IC
+
+        key = f"{identity}:{use_ic}"
+        if key not in self.kinic_instances:
+            try:
+                self.kinic_instances[key] = KinicMemories(identity=identity, ic=use_ic)
+                print(f"INFO: Created Kinic instance (identity={identity}, ic={use_ic})")
+            except Exception as e:
+                print(f"ERROR: Failed to create Kinic instance: {e}")
+                print("  Note: kinic-py requires D-Bus/keyring. Using mock mode.")
+                return None
+        return self.kinic_instances[key]
 
 
-# Flag to track if real kinic operations work (checked on first use)
-KINIC_OPERATIONS_TESTED = False
-KINIC_OPERATIONS_WORK = True
+# Application state singleton (initialized once at startup)
+app_state = KinicServiceState()
 
 # ============================================================================
 # Endpoints
@@ -236,27 +265,25 @@ KINIC_OPERATIONS_WORK = True
 
 @app.get("/health", response_model=HealthResponse)
 async def health():
-    """Health check endpoint"""
+    """Health check endpoint."""
     return HealthResponse(
         status="healthy",
         kinic_available=KINIC_AVAILABLE,
-        version="0.1.0"
+        version=SERVICE_VERSION
     )
 
 @app.post("/memories", response_model=CreateMemoryResponse)
 async def create_memory(request: CreateMemoryRequest):
-    """Create a new memory canister on the on-chain vector database"""
-    global KINIC_OPERATIONS_TESTED, KINIC_OPERATIONS_WORK
-
+    """Create a new memory canister on the on-chain vector database."""
     try:
         # Try kinic if available and not already known to fail
-        if KINIC_AVAILABLE and KINIC_OPERATIONS_WORK:
-            kinic = get_kinic(request.identity, request.use_ic)
+        if KINIC_AVAILABLE and app_state.operations_work:
+            kinic = app_state.get_kinic(request.identity, request.use_ic)
             if kinic is not None:
                 try:
                     # create() returns the canister principal ID (string)
                     canister_id = kinic.create(name=request.name, description=request.description)
-                    KINIC_OPERATIONS_TESTED = True
+                    app_state.operations_tested = True
 
                     return CreateMemoryResponse(
                         success=True,
@@ -265,16 +292,16 @@ async def create_memory(request: CreateMemoryRequest):
                     )
                 except Exception as kinic_error:
                     # Mark kinic operations as not working and fall back to mock
-                    if not KINIC_OPERATIONS_TESTED:
-                        KINIC_OPERATIONS_WORK = False
+                    if not app_state.operations_tested:
+                        app_state.operations_work = False
                         print(f"INFO: Kinic operations require keyring. Using mock mode.")
                         print(f"  Error: {str(kinic_error)[:100]}")
 
         # Mock mode - generate fake ID
         memory_id = hashlib.sha256(
             f"{request.name}:{request.identity}:{datetime.utcnow().isoformat()}".encode()
-        ).hexdigest()[:16]
-        mock_store.create(memory_id, request.name, request.description)
+        ).hexdigest()[:MEMORY_ID_LENGTH]
+        app_state.mock_store.create(memory_id, request.name, request.description)
         return CreateMemoryResponse(
             success=True,
             memory_id=memory_id,
@@ -290,13 +317,11 @@ async def create_memory(request: CreateMemoryRequest):
 
 @app.post("/memories/{memory_id}/insert", response_model=InsertMemoryResponse)
 async def insert_memory(memory_id: str, request: InsertMemoryRequest):
-    """Insert a memory with zkML embedding proof"""
-    global KINIC_OPERATIONS_TESTED, KINIC_OPERATIONS_WORK
-
+    """Insert a memory with zkML embedding proof."""
     try:
         # Try kinic if available and operations work
-        if KINIC_AVAILABLE and KINIC_OPERATIONS_WORK:
-            kinic = get_kinic()
+        if KINIC_AVAILABLE and app_state.operations_work:
+            kinic = app_state.get_kinic()
             if kinic is not None:
                 try:
                     # insert_markdown returns the memory index (int)
@@ -306,7 +331,7 @@ async def insert_memory(memory_id: str, request: InsertMemoryRequest):
                         tag=request.tag,
                         text=request.content
                     )
-                    KINIC_OPERATIONS_TESTED = True
+                    app_state.operations_tested = True
 
                     # Generate content hash for tracking
                     content_hash = hashlib.sha256(request.content.encode()).hexdigest()
@@ -323,12 +348,12 @@ async def insert_memory(memory_id: str, request: InsertMemoryRequest):
                         zk_proof=f"kinic-zktam:{memory_id}:{result_idx}"  # Reference to Kinic proof
                     )
                 except Exception as kinic_error:
-                    if not KINIC_OPERATIONS_TESTED:
-                        KINIC_OPERATIONS_WORK = False
+                    if not app_state.operations_tested:
+                        app_state.operations_work = False
                         print(f"INFO: Kinic insert failed. Using mock mode.")
 
         # Mock mode
-        result = mock_store.insert(memory_id, request.tag, request.content)
+        result = app_state.mock_store.insert(memory_id, request.tag, request.content)
         return InsertMemoryResponse(
             success=True,
             content_hash=result["content_hash"],
@@ -348,18 +373,16 @@ async def insert_memory(memory_id: str, request: InsertMemoryRequest):
 
 @app.post("/memories/{memory_id}/search", response_model=SearchResponse)
 async def search_memories(memory_id: str, request: SearchRequest):
-    """Search memories with semantic similarity"""
-    global KINIC_OPERATIONS_TESTED, KINIC_OPERATIONS_WORK
-
+    """Search memories with semantic similarity."""
     try:
         # Try kinic if available and operations work
-        if KINIC_AVAILABLE and KINIC_OPERATIONS_WORK:
-            kinic = get_kinic()
+        if KINIC_AVAILABLE and app_state.operations_work:
+            kinic = app_state.get_kinic()
             if kinic is not None:
                 try:
                     # search returns List[Tuple[float, str]] - (similarity, payload)
                     raw_results = kinic.search(memory_id=memory_id, query=request.query)
-                    KINIC_OPERATIONS_TESTED = True
+                    app_state.operations_tested = True
 
                     results = []
                     for similarity, payload in raw_results[:request.limit]:
@@ -377,12 +400,12 @@ async def search_memories(memory_id: str, request: SearchRequest):
                         merkle_proof=f"kinic-merkle:{memory_id}"  # Merkle proof available
                     )
                 except Exception as kinic_error:
-                    if not KINIC_OPERATIONS_TESTED:
-                        KINIC_OPERATIONS_WORK = False
+                    if not app_state.operations_tested:
+                        app_state.operations_work = False
                         print(f"INFO: Kinic search failed. Using mock mode.")
 
         # Mock mode
-        results = mock_store.search(memory_id, request.query, request.limit)
+        results = app_state.mock_store.search(memory_id, request.query, request.limit)
         return SearchResponse(
             success=True,
             results=[SearchResult(**r) for r in results]
@@ -397,10 +420,10 @@ async def search_memories(memory_id: str, request: SearchRequest):
 
 @app.get("/memories/{memory_id}/commitment", response_model=CommitmentResponse)
 async def get_commitment(memory_id: str):
-    """Get current Merkle root commitment for a memory store"""
+    """Get current Merkle root commitment for a memory store."""
     try:
         # Use mock store commitment - kinic SDK doesn't expose get_info
-        commitment = mock_store.get_commitment(memory_id)
+        commitment = app_state.mock_store.get_commitment(memory_id)
         return CommitmentResponse(
             success=True,
             memory_id=memory_id,
@@ -423,12 +446,15 @@ async def get_commitment(memory_id: str):
 
 @app.get("/memories")
 async def list_memories():
-    """List all memory stores"""
-    if KINIC_AVAILABLE:
-        kinic = get_kinic("default", True)
-        return {"memories": kinic.list()}
-    else:
-        return {"memories": list(mock_store.metadata.keys())}
+    """List all memory stores."""
+    if KINIC_AVAILABLE and app_state.operations_work:
+        kinic = app_state.get_kinic("default", True)
+        if kinic is not None:
+            try:
+                return {"memories": kinic.list()}
+            except Exception:
+                pass  # Fall through to mock mode
+    return {"memories": list(app_state.mock_store.metadata.keys())}
 
 # ============================================================================
 # Main
@@ -436,7 +462,7 @@ async def list_memories():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 3002))
+    port = int(os.environ.get("PORT", DEFAULT_PORT))
     print(f"Starting Kinic Memory Service on port {port}")
     print(f"Kinic SDK available: {KINIC_AVAILABLE}")
     uvicorn.run(app, host="0.0.0.0", port=port)

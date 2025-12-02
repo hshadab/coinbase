@@ -49,21 +49,27 @@ console.log(result.guardrail.proof);    // '0x...' zkML SNARK proof
 ```typescript
 import { AgentMemory, StorageType } from '@trustless-agentkit/sdk';
 
-const memory = new AgentMemory({
-  stores: [{ type: StorageType.Kinic, config: { canisterId: '...' } }],
+// Initialize memory with Base contracts + Kinic service
+const memory = new AgentMemory(signer, {
+  identityRegistryAddress: '0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f',
+  memoryRegistryAddress: '0x525D0c8908939303CD7ebEEf5A350EC5b6764451',
+  kinicServiceUrl: 'http://localhost:3002',
+  agentId: 1,
+});
+
+// Create memory store on Kinic + Base
+await memory.createStore({
+  name: 'agent-preferences',
+  description: 'User preferences and context',
+  storageType: StorageType.InternetComputer,
+  useKinic: true,
 });
 
 // Store with zkML-verified embeddings
-await memory.insert({
-  content: 'User prefers low-risk investments',
-  metadata: { type: 'preference', confidence: 0.95 },
-});
+await memory.insert('preference', 'User prefers low-risk investments');
 
 // Semantic search across agent knowledge
-const results = await memory.search({
-  query: 'investment preferences',
-  limit: 5,
-});
+const results = await memory.search('investment preferences', 5);
 ```
 
 ### 3. Full A2A marketplace

@@ -13,6 +13,16 @@
 import { ethers, Contract, Signer, Log, EventLog } from "ethers";
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+/** Default escrow timeout in seconds (24 hours) */
+const DEFAULT_ESCROW_TIMEOUT_SECONDS = 86400;
+
+/** Milliseconds per second for timestamp conversions */
+const MS_PER_SECOND = 1000;
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -667,7 +677,7 @@ export class AgentPaymentRails {
         minZkmlAttestations: 0,
         requireZkmlProof: false,
       },
-      expiresAt: Math.floor(Date.now() / 1000) + 86400, // 24 hours
+      expiresAt: Math.floor(Date.now() / MS_PER_SECOND) + DEFAULT_ESCROW_TIMEOUT_SECONDS,
       nonce: ethers.hexlify(ethers.randomBytes(32)),
     };
   }
@@ -699,7 +709,7 @@ export class AgentPaymentRails {
         params.toAgentId,
         params.config.zkmlModelCommitment || ethers.ZeroHash,
         params.config.requiredApprovalRate || 80,
-        params.config.timeoutSeconds || 86400,
+        params.config.timeoutSeconds || DEFAULT_ESCROW_TIMEOUT_SECONDS,
         { value: params.amount }
       );
     } else {
@@ -713,7 +723,7 @@ export class AgentPaymentRails {
         params.toAgentId,
         params.config.zkmlModelCommitment || ethers.ZeroHash,
         params.config.requiredApprovalRate || 80,
-        params.config.timeoutSeconds || 86400
+        params.config.timeoutSeconds || DEFAULT_ESCROW_TIMEOUT_SECONDS
       );
     }
 

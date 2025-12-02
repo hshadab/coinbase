@@ -132,14 +132,24 @@ const result = await verifiableAction({ to: '0x...', amount: 100 });
 console.log(result.guardrail.proof); // '0x...' - cryptographic proof it ran correctly
 ```
 
-### Add Verifiable Memory (2 more lines)
+### Add Verifiable Memory
 
 ```typescript
 import { AgentMemory, StorageType } from '@trustless-agentkit/sdk';
 
-const memory = new AgentMemory({ stores: [{ type: StorageType.InMemory }] });
-await memory.insert({ content: 'User prefers low-risk trades', metadata: { type: 'preference' } });
-const history = await memory.search({ query: 'risk preferences' });
+// Initialize memory with Base contracts + Kinic service
+const memory = new AgentMemory(signer, {
+  identityRegistryAddress: '0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f',
+  memoryRegistryAddress: '0x525D0c8908939303CD7ebEEf5A350EC5b6764451',
+  kinicServiceUrl: 'http://localhost:3002',
+  agentId: 1, // Your agent's NFT ID
+});
+
+// Insert memory with zkML-verified embedding
+await memory.insert('preference', 'User prefers low-risk trades');
+
+// Semantic search across agent knowledge
+const results = await memory.search('risk preferences');
 ```
 
 ### Or: Scaffold a Full Project
@@ -240,11 +250,21 @@ console.log(result.attestationHash); // On-chain record
 import { withZkGuardrail, AgentMemory, StorageType } from '@trustless-agentkit/sdk';
 import { AgentKit } from '@coinbase/agentkit';
 
-// Setup verifiable memory
-const memory = new AgentMemory({
-  stores: [{ type: StorageType.Kinic, config: { canisterId: '...' } }],
+// Setup verifiable memory with Base contracts + Kinic
+const memory = new AgentMemory(signer, {
+  identityRegistryAddress: '0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f',
+  memoryRegistryAddress: '0x525D0c8908939303CD7ebEEf5A350EC5b6764451',
+  kinicServiceUrl: 'http://localhost:3002',
+  agentId: 1,
 });
-await memory.initialize();
+
+// Create memory store on Kinic + Base
+await memory.createStore({
+  name: 'agent-transactions',
+  description: 'Transaction history with zkML proofs',
+  storageType: StorageType.InternetComputer,
+  useKinic: true,
+});
 
 // Wrap action with zkML guardrails
 const safeTransfer = withZkGuardrail(
@@ -263,20 +283,17 @@ const result = await safeTransfer({
 });
 
 // Store interaction in Kinic (verifiable memory)
-await memory.insert({
-  content: JSON.stringify({
+const insertResult = await memory.insert(
+  'transaction',
+  JSON.stringify({
     action: 'transfer',
     decision: result.guardrail.decision,
     proof: result.guardrail.proof,
-  }),
-  metadata: { type: 'transaction', timestamp: Date.now() },
-});
+  })
+);
 
 // Later: semantic search across all interactions
-const history = await memory.search({
-  query: 'transfers over 100 USDC',
-  limit: 10,
-});
+const history = await memory.search('transfers over 100 USDC', 10);
 ```
 
 ## Use Cases (All Include zkML + Kinic)

@@ -180,10 +180,16 @@ export class X402Client {
 
   /**
    * Get the signer's address (cached)
+   * @returns The signer's Ethereum address
+   * @throws Error if address cannot be retrieved from signer
    */
   private async getSignerAddress(): Promise<string> {
     if (!this.signerAddress) {
-      this.signerAddress = await this.signer.getAddress();
+      const address = await this.signer.getAddress();
+      if (!address) {
+        throw new Error('Failed to get signer address: address is empty');
+      }
+      this.signerAddress = address;
     }
     return this.signerAddress;
   }

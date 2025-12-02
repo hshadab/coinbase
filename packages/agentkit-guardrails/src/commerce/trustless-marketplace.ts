@@ -64,20 +64,45 @@ interface MarketplaceSearchResult {
 
 /**
  * Simple in-memory store for marketplace (Kinic integration placeholder)
+ * @internal
  */
 class MarketplaceMemory {
   private entries: MarketplaceMemoryEntry[] = [];
   private initialized = false;
 
+  /**
+   * Initialize the memory store
+   * @returns Promise that resolves when initialization is complete
+   */
   async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
     this.initialized = true;
   }
 
+  /**
+   * Check if the memory store is initialized
+   * @returns Whether the store is initialized
+   */
+  isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  /**
+   * Insert a new entry into the memory store
+   * @param entry - The entry to insert
+   * @returns Promise with the generated entry ID
+   * @throws Error if store is not initialized
+   */
   async insert(entry: {
     content: string;
     embedding: number[];
     metadata: Record<string, string>;
   }): Promise<{ id: string }> {
+    if (!this.initialized) {
+      throw new Error('MarketplaceMemory not initialized. Call initialize() first.');
+    }
     const id = `mem_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     this.entries.push({
       id,
@@ -89,6 +114,11 @@ class MarketplaceMemory {
     return { id };
   }
 
+  /**
+   * Search for entries matching a query
+   * @param params - Search parameters
+   * @returns Promise with search results
+   */
   async search(params: {
     query: string;
     limit?: number;
