@@ -13,15 +13,19 @@ import type {
   EIP712Domain,
   PolicyDecision,
 } from '../core/types.js';
+import { ZERO_ADDRESS } from '../config.js';
 
 /**
  * EIP-712 domain for Jolt Atlas attestations
+ *
+ * Note: verifyingContract should be overridden with the actual registry
+ * address when one is deployed. Use the attestation config to provide it.
  */
 export const ATTESTATION_DOMAIN: EIP712Domain = {
   name: 'JoltAtlasGuardrail',
   version: '1',
   chainId: 8453, // Base mainnet, can be overridden
-  verifyingContract: '0x0000000000000000000000000000000000000000', // Placeholder until registry deployed
+  verifyingContract: ZERO_ADDRESS,
 };
 
 /**

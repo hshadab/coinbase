@@ -19,10 +19,19 @@ export interface PolicyModelResult {
 }
 
 /**
+ * ONNX inference session interface
+ */
+interface OnnxInferenceSession {
+  inputNames: readonly string[];
+  outputNames: readonly string[];
+  run(feeds: Record<string, unknown>): Promise<Record<string, { data: Float32Array }>>;
+}
+
+/**
  * Policy model wrapper for ONNX inference
  */
 export class PolicyModel {
-  private session: unknown | null = null;
+  private session: OnnxInferenceSession | 'mock' | null = null;
   private readonly config: PolicyModelConfig;
   private commitment: string | null = null;
 
@@ -86,26 +95,23 @@ export class PolicyModel {
 
     try {
       const ort = await import('onnxruntime-node');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const session = this.session as any;
+      const session = this.session as OnnxInferenceSession;
 
       // Convert features to tensor
-      const inputNames = session.inputNames as readonly string[];
-      const featureArray = this.featuresToArray(features, inputNames);
+      const featureArray = this.featuresToArray(features, session.inputNames);
       const tensor = new ort.Tensor('float32', featureArray, [1, featureArray.length]);
 
       // Run inference
       const feeds: Record<string, unknown> = {};
-      feeds[inputNames[0]] = tensor;
+      feeds[session.inputNames[0]] = tensor;
       const results = await session.run(feeds);
 
       // Parse output
       const outputName = session.outputNames[0];
-      const output = results[outputName].data as Float32Array;
+      const output = results[outputName].data;
 
       return this.parseOutput(Array.from(output));
-    } catch (error) {
-      console.error('[JoltAtlas] Inference error:', error);
+    } catch {
       return this.mockInference(features);
     }
   }
@@ -238,9 +244,14 @@ export class PolicyModel {
 }
 
 /**
- * Model registry for caching loaded models
+ * Maximum number of models to keep in cache
  */
-const modelCache = new Map<string, PolicyModel>();
+const MAX_CACHE_SIZE = 10;
+
+/**
+ * Model registry for caching loaded models with LRU eviction
+ */
+const modelCache = new Map<string, { model: PolicyModel; lastUsed: number }>();
 
 /**
  * Get or create a policy model
@@ -248,21 +259,58 @@ const modelCache = new Map<string, PolicyModel>();
 export function getPolicyModel(config: PolicyModelConfig | string): PolicyModel {
   const key = typeof config === 'string' ? config : config.path;
 
-  let model = modelCache.get(key);
-  if (!model) {
-    model = new PolicyModel(config);
-    modelCache.set(key, model);
+  const cached = modelCache.get(key);
+  if (cached) {
+    // Update last used time
+    cached.lastUsed = Date.now();
+    return cached.model;
   }
 
+  // Evict oldest entries if cache is full
+  if (modelCache.size >= MAX_CACHE_SIZE) {
+    evictOldestModel();
+  }
+
+  const model = new PolicyModel(config);
+  modelCache.set(key, { model, lastUsed: Date.now() });
+
   return model;
+}
+
+/**
+ * Evict the least recently used model from cache
+ */
+function evictOldestModel(): void {
+  let oldestKey: string | null = null;
+  let oldestTime = Infinity;
+
+  for (const [key, entry] of modelCache.entries()) {
+    if (entry.lastUsed < oldestTime) {
+      oldestTime = entry.lastUsed;
+      oldestKey = key;
+    }
+  }
+
+  if (oldestKey) {
+    const entry = modelCache.get(oldestKey);
+    entry?.model.dispose();
+    modelCache.delete(oldestKey);
+  }
 }
 
 /**
  * Clear model cache
  */
 export function clearModelCache(): void {
-  for (const model of modelCache.values()) {
-    model.dispose();
+  for (const entry of modelCache.values()) {
+    entry.model.dispose();
   }
   modelCache.clear();
+}
+
+/**
+ * Get current cache size
+ */
+export function getModelCacheSize(): number {
+  return modelCache.size;
 }

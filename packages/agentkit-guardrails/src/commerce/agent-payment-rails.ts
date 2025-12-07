@@ -11,6 +11,7 @@
  */
 
 import { ethers, Contract, Signer } from "ethers";
+import { getProverServiceUrl } from "../config.js";
 
 // ============================================================================
 // Types
@@ -178,7 +179,7 @@ export class AgentPaymentRails {
 
   constructor(signer: Signer, config: ERC8004Config) {
     this.signer = signer;
-    this.proverServiceUrl = config.proverServiceUrl || "http://localhost:3001";
+    this.proverServiceUrl = config.proverServiceUrl || getProverServiceUrl();
 
     // Initialize ERC-8004 registries
     this.identityRegistry = new Contract(
@@ -232,7 +233,7 @@ export class AgentPaymentRails {
 
     // Extract agentId from Registered event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "Registered"
+      (log: { fragment?: { name: string } }) => log.fragment?.name === "Registered"
     );
     if (event) {
       this.myAgentId = Number(event.args[0]);
@@ -408,7 +409,7 @@ export class AgentPaymentRails {
 
     // Extract attestation hash from event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "ZkmlAttestationPosted"
+      (log: { fragment?: { name: string } }) => log.fragment?.name === "ZkmlAttestationPosted"
     );
 
     return event?.args[0] || ethers.ZeroHash;
@@ -721,7 +722,7 @@ export class AgentPaymentRails {
 
     // Extract escrow ID from event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "EscrowCreated"
+      (log: { fragment?: { name: string } }) => log.fragment?.name === "EscrowCreated"
     );
 
     return {

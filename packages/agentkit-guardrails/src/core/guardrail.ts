@@ -15,6 +15,7 @@ import {
   type WalletContext,
   type SignedAttestation,
 } from './types.js';
+import { ZERO_ADDRESS } from '../config.js';
 import { PolicyModel, getPolicyModel } from '../models/policy-model.js';
 import { ProofGenerator, getProofGenerator } from '../proof/proof-generator.js';
 import {
@@ -84,8 +85,6 @@ export class Guardrail {
         proof = proofResult.proof;
         inputHash = proofResult.inputHash;
       } catch (error) {
-        console.error('[JoltAtlas] Proof generation failed:', error);
-
         if (this.config.onProofFail === 'reject') {
           return {
             decision: PolicyDecision.REJECT,
@@ -130,7 +129,7 @@ export class Guardrail {
         attestation = {
           ...unsigned,
           signature: '0x',
-          signer: '0x0000000000000000000000000000000000000000',
+          signer: ZERO_ADDRESS,
         };
       }
     }
@@ -160,33 +159,25 @@ export class Guardrail {
     // Handle rejection
     if (guardrailResult.decision === 'reject') {
       if (this.config.onModelReject === 'block') {
-        const error = new Error(
-          `Action blocked by guardrail: ${action.actionType} rejected with confidence ${guardrailResult.confidence.toFixed(3)}`
-        ) as GuardrailBlockedError;
-        error.name = 'GuardrailBlockedError';
-        (error as any).guardrailResult = guardrailResult;
-        (error as any).actionContext = action;
-        throw error;
-      }
-
-      if (this.config.onModelReject === 'warn') {
-        console.warn(
-          `[JoltAtlas] Action would be rejected: ${action.actionType}`,
-          { decision: guardrailResult.decision, confidence: guardrailResult.confidence }
+        throw new GuardrailBlockedError(
+          `Action blocked by guardrail: ${action.actionType} rejected with confidence ${guardrailResult.confidence.toFixed(3)}`,
+          guardrailResult,
+          action
         );
       }
+
+      // In warn mode, we continue execution without logging
+      // The guardrail result is still returned for caller inspection
     }
 
     // Handle review decision
     if (guardrailResult.decision === 'review') {
       if (this.config.onModelReject === 'block') {
-        const error = new Error(
-          `Action requires review: ${action.actionType}`
-        ) as GuardrailBlockedError;
-        error.name = 'GuardrailBlockedError';
-        (error as any).guardrailResult = guardrailResult;
-        (error as any).actionContext = action;
-        throw error;
+        throw new GuardrailBlockedError(
+          `Action requires review: ${action.actionType}`,
+          guardrailResult,
+          action
+        );
       }
     }
 

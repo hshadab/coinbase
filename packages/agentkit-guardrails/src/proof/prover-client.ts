@@ -6,6 +6,7 @@
  */
 
 import type { FeatureVector, PolicyDecision } from '../core/types.js';
+import { getProverServiceUrl, DEFAULT_TIMEOUT_MS, HEALTH_CHECK_TIMEOUT_MS } from '../config.js';
 
 /**
  * Prover service configuration
@@ -92,7 +93,7 @@ export class ProverServiceClient {
   constructor(config: ProverServiceConfig) {
     this.config = {
       endpoint: config.endpoint.replace(/\/$/, ''), // Remove trailing slash
-      timeout: config.timeout ?? 30000,
+      timeout: config.timeout ?? DEFAULT_TIMEOUT_MS,
       apiKey: config.apiKey ?? '',
       retryOnFailure: config.retryOnFailure ?? true,
       maxRetries: config.maxRetries ?? 3,
@@ -320,9 +321,7 @@ let defaultClient: ProverServiceClient | null = null;
  */
 export function getProverServiceClient(config?: ProverServiceConfig): ProverServiceClient {
   if (!defaultClient || config) {
-    const endpoint = config?.endpoint ??
-      process.env.TRUSTLESS_PROVER_URL ??
-      'http://localhost:3001';
+    const endpoint = config?.endpoint ?? getProverServiceUrl();
 
     defaultClient = new ProverServiceClient({
       endpoint,
@@ -338,8 +337,8 @@ export function getProverServiceClient(config?: ProverServiceConfig): ProverServ
 export async function isProverServiceAvailable(endpoint?: string): Promise<boolean> {
   try {
     const client = new ProverServiceClient({
-      endpoint: endpoint ?? process.env.TRUSTLESS_PROVER_URL ?? 'http://localhost:3001',
-      timeout: 5000,
+      endpoint: endpoint ?? getProverServiceUrl(),
+      timeout: HEALTH_CHECK_TIMEOUT_MS,
       retryOnFailure: false,
     });
     await client.healthCheck();

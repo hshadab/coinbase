@@ -16,6 +16,7 @@
  */
 
 import { ethers, Contract, Signer } from "ethers";
+import { getKinicServiceUrl } from "../config.js";
 
 // ============================================================================
 // Types
@@ -177,7 +178,7 @@ export class AgentMemory {
 
   constructor(signer: Signer, config: AgentMemoryConfig) {
     this.signer = signer;
-    this.kinicServiceUrl = config.kinicServiceUrl || "http://localhost:3002";
+    this.kinicServiceUrl = config.kinicServiceUrl || getKinicServiceUrl();
     this.agentId = config.agentId || null;
 
     this.memoryRegistry = new Contract(
@@ -314,7 +315,7 @@ export class AgentMemory {
 
     // Extract attestation hash from event
     const event = receipt.logs.find(
-      (log: any) => log.fragment?.name === "MemoryAttestationPosted"
+      (log: { fragment?: { name: string } }) => log.fragment?.name === "MemoryAttestationPosted"
     );
 
     return {

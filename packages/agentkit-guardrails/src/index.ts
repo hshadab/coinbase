@@ -170,3 +170,20 @@ export {
   type KnowledgeCredential,
   type MemoryIntegrityScore,
 } from './memory/index.js';
+
+// Configuration exports
+export {
+  getSDKConfig,
+  getProverServiceUrl,
+  getKinicServiceUrl,
+  getRuntimeMode,
+  isMockMode,
+  DEFAULT_TIMEOUT_MS,
+  HEALTH_CHECK_TIMEOUT_MS,
+  ZERO_ADDRESS,
+  type SDKConfig,
+  type RuntimeMode,
+} from './config.js';
+
+// Model cache utilities
+export { getModelCacheSize } from './models/policy-model.js';
