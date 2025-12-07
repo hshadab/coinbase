@@ -955,6 +955,476 @@
       color: var(--text-primary);
     }
 
+    /* Deployed Contracts Section */
+    .contracts-section {
+      padding: 60px 48px;
+      background: var(--glass-bg);
+      border-top: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .contracts-section h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .contracts-section .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      font-size: 16px;
+    }
+
+    .contracts-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .contract-card {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .contract-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--coinbase-blue);
+      box-shadow: 0 12px 40px rgba(0, 82, 255, 0.15);
+    }
+
+    .contract-card .icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .contract-card h4 {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .contract-card .address {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--coinbase-blue);
+      word-break: break-all;
+      margin-bottom: 12px;
+    }
+
+    .contract-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: rgba(0, 82, 255, 0.1);
+      border: 1px solid var(--coinbase-blue);
+      border-radius: 8px;
+      color: var(--coinbase-blue);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .contract-card a:hover {
+      background: var(--coinbase-blue);
+      color: white;
+    }
+
+    /* Built With Section */
+    .built-with {
+      padding: 48px;
+      text-align: center;
+    }
+
+    .built-with h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    .logo-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+
+    .partner-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .partner-logo:hover {
+      opacity: 1;
+      transform: translateY(-4px);
+    }
+
+    .partner-logo .logo-icon-large {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+    }
+
+    .partner-logo span {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Comparison Table */
+    .comparison-section {
+      padding: 80px 48px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .comparison-section h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .comparison-section .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--glass-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--glass-border);
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 16px 24px;
+      text-align: left;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .comparison-table th {
+      background: rgba(0, 82, 255, 0.1);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .comparison-table th:first-child {
+      width: 50%;
+    }
+
+    .comparison-table td {
+      font-size: 14px;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table .feature {
+      color: var(--text-primary);
+    }
+
+    .comparison-table .check {
+      color: var(--success-green);
+      font-size: 18px;
+    }
+
+    .comparison-table .cross {
+      color: var(--error-red);
+      font-size: 18px;
+    }
+
+    .comparison-table .highlight-col {
+      background: rgba(0, 214, 50, 0.05);
+    }
+
+    /* Architecture Diagram */
+    .architecture-section {
+      padding: 80px 48px;
+      text-align: center;
+    }
+
+    .architecture-section h2 {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .architecture-section .subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 48px;
+    }
+
+    .architecture-diagram {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 48px;
+    }
+
+    .arch-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .arch-box {
+      padding: 20px 32px;
+      border-radius: 12px;
+      font-weight: 500;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .arch-box:hover {
+      transform: translateY(-4px);
+    }
+
+    .arch-box.agent {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(29, 78, 216, 0.2));
+      border: 1px solid #3B82F6;
+      min-width: 200px;
+    }
+
+    .arch-box.trustless-layer {
+      background: linear-gradient(135deg, rgba(0, 82, 255, 0.15), rgba(0, 214, 50, 0.15));
+      border: 2px solid var(--coinbase-blue);
+      padding: 32px 48px;
+      min-width: 600px;
+    }
+
+    .arch-box.base {
+      background: linear-gradient(135deg, rgba(0, 82, 255, 0.2), rgba(0, 82, 255, 0.1));
+      border: 1px solid var(--coinbase-blue);
+    }
+
+    .arch-box.kinic {
+      background: linear-gradient(135deg, rgba(0, 214, 50, 0.2), rgba(0, 214, 50, 0.1));
+      border: 1px solid var(--success-green);
+    }
+
+    .arch-box h4 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .arch-box p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .arch-arrow {
+      font-size: 24px;
+      color: var(--text-muted);
+    }
+
+    .arch-pillars {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin-top: 16px;
+    }
+
+    .arch-pillar {
+      padding: 16px 24px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .arch-pillar.zkml {
+      background: rgba(0, 82, 255, 0.1);
+      border: 1px solid rgba(0, 82, 255, 0.3);
+    }
+
+    .arch-pillar.memory {
+      background: rgba(0, 214, 50, 0.1);
+      border: 1px solid rgba(0, 214, 50, 0.3);
+    }
+
+    .arch-pillar h5 {
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .arch-pillar p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Try It Now Section */
+    .try-section {
+      padding: 80px 48px;
+      background: linear-gradient(135deg, rgba(0, 82, 255, 0.05), rgba(0, 214, 50, 0.05));
+      border-top: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .try-section h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .try-section .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+    }
+
+    .try-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .try-input-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .try-input {
+      flex: 1;
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: var(--text-primary);
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .try-input:focus {
+      border-color: var(--coinbase-blue);
+      box-shadow: 0 0 0 3px rgba(0, 82, 255, 0.1);
+    }
+
+    .try-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .try-btn {
+      padding: 16px 32px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--coinbase-blue), #0066FF);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .try-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(0, 82, 255, 0.3);
+    }
+
+    .try-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .try-output {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      min-height: 200px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .try-output .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .try-output .output-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .try-output .output-timer {
+      font-size: 14px;
+      color: var(--coinbase-blue);
+    }
+
+    .try-output .output-content {
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    .try-output .output-line {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .try-output .output-line.success {
+      color: var(--success-green);
+    }
+
+    .try-output .output-line.pending {
+      color: var(--warning-orange);
+    }
+
+    .try-output .output-line .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--glass-border);
+      border-top-color: var(--coinbase-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .workflow-grid {
@@ -968,6 +1438,23 @@
       .attack-scenario {
         grid-template-columns: 1fr;
       }
+
+      .contracts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .arch-box.trustless-layer {
+        min-width: auto;
+        padding: 24px;
+      }
+
+      .arch-row {
+        flex-direction: column;
+      }
+
+      .arch-arrow {
+        transform: rotate(90deg);
+      }
     }
 
     @media (max-width: 768px) {
@@ -976,6 +1463,38 @@
       .stats-bar { grid-template-columns: repeat(2, 1fr); }
       header { padding: 16px 24px; }
       .demo-container { padding: 0 24px 40px; }
+
+      .contracts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .contracts-section { padding: 40px 24px; }
+      .try-section { padding: 40px 24px; }
+      .architecture-section { padding: 40px 24px; }
+      .comparison-section { padding: 40px 24px; }
+
+      .try-input-group {
+        flex-direction: column;
+      }
+
+      .try-btn {
+        width: 100%;
+      }
+
+      .logo-row {
+        gap: 24px;
+      }
+
+      .arch-pillars {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: 12px 16px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -1014,6 +1533,139 @@
         <p>Kinic stores data, Base stores Merkle commitments</p>
       </div>
     </div>
+  </section>
+
+  <!-- Built With Section -->
+  <section class="built-with">
+    <h3>Built With</h3>
+    <div class="logo-row">
+      <a href="https://www.coinbase.com/developer-platform" class="partner-logo" target="_blank">
+        <div class="logo-icon-large" style="background: linear-gradient(135deg, #0052FF, #0066FF);">C</div>
+        <span>Coinbase</span>
+      </a>
+      <a href="https://base.org" class="partner-logo" target="_blank">
+        <div class="logo-icon-large" style="background: linear-gradient(135deg, #0052FF, #0052FF);">B</div>
+        <span>Base</span>
+      </a>
+      <a href="https://docs.cdp.coinbase.com/agent-kit/welcome" class="partner-logo" target="_blank">
+        <div class="logo-icon-large" style="background: linear-gradient(135deg, #3B82F6, #1D4ED8);">A</div>
+        <span>AgentKit</span>
+      </a>
+      <a href="https://github.com/coinbase/x402" class="partner-logo" target="_blank">
+        <div class="logo-icon-large" style="background: linear-gradient(135deg, #10B981, #059669);">402</div>
+        <span>x402</span>
+      </a>
+      <a href="https://kinic.io" class="partner-logo" target="_blank">
+        <div class="logo-icon-large" style="background: linear-gradient(135deg, #00D632, #00B82E);">K</div>
+        <span>Kinic</span>
+      </a>
+      <a href="https://jolt.a16zcrypto.com/" class="partner-logo" target="_blank">
+        <div class="logo-icon-large" style="background: linear-gradient(135deg, #9333EA, #7C3AED);">J</div>
+        <span>Jolt zkVM</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Architecture Diagram -->
+  <section class="architecture-section">
+    <h2>How It Works</h2>
+    <p class="subtitle">End-to-end verifiable agent commerce on Base</p>
+    <div class="architecture-diagram">
+      <div class="arch-row">
+        <div class="arch-box agent">
+          <h4>Agent A (Buyer)</h4>
+          <p>CDP Wallet + AgentKit</p>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box trustless-layer">
+          <h4>Trustless AgentKit Layer</h4>
+          <p>Verifiable Compute + Verifiable Memory</p>
+          <div class="arch-pillars">
+            <div class="arch-pillar zkml">
+              <h5>zkML (Jolt Atlas)</h5>
+              <p>SNARK proves inference</p>
+            </div>
+            <div class="arch-pillar memory">
+              <h5>Kinic + Base</h5>
+              <p>Merkle commitments</p>
+            </div>
+          </div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box agent">
+          <h4>Agent B (Seller)</h4>
+          <p>CDP Wallet + AgentKit</p>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-box kinic">
+          <h4>Kinic (Internet Computer)</h4>
+          <p>On-chain vector DB • Semantic search • zkML embeddings</p>
+        </div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box base">
+          <h4>Base (Ethereum L2)</h4>
+          <p>Merkle roots • Attestations • ERC-8004 registries</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="comparison-section">
+    <h2>Why Add Trustless?</h2>
+    <p class="subtitle">What you get beyond standard AgentKit</p>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>AgentKit</th>
+          <th class="highlight-col">+ Trustless AgentKit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="feature">Agent Wallets (CDP)</td>
+          <td class="check">✓</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+        <tr>
+          <td class="feature">On-chain Transactions</td>
+          <td class="check">✓</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+        <tr>
+          <td class="feature">Verifiable AI Inference (zkML)</td>
+          <td class="cross">✗</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+        <tr>
+          <td class="feature">Verifiable Memory (Merkle)</td>
+          <td class="cross">✗</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+        <tr>
+          <td class="feature">Fraud Prevention</td>
+          <td class="cross">✗</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+        <tr>
+          <td class="feature">On-chain Audit Trail</td>
+          <td class="cross">✗</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+        <tr>
+          <td class="feature">Agent-to-Agent Trust</td>
+          <td class="cross">✗</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+        <tr>
+          <td class="feature">Semantic Agent Discovery</td>
+          <td class="cross">✗</td>
+          <td class="highlight-col check">✓</td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 
   <section class="demo-container">
@@ -1305,6 +1957,67 @@
     </div>
   </div>
 
+  <!-- Try It Now Section -->
+  <section class="try-section">
+    <h2>Try It Now</h2>
+    <p class="subtitle">Simulate a zkML proof generation in your browser</p>
+    <div class="try-container">
+      <div class="try-input-group">
+        <input type="text" class="try-input" id="tryInput" placeholder="Enter agent query (e.g., 'ETH sentiment analysis')" value="ETH sentiment analysis">
+        <button class="try-btn" id="tryBtn" onclick="runSimulation()">Generate Proof</button>
+      </div>
+      <div class="try-output" id="tryOutput">
+        <div class="output-header">
+          <span class="output-title">Simulation Output</span>
+          <span class="output-timer" id="outputTimer">0.00s</span>
+        </div>
+        <div class="output-content" id="outputContent">
+          <div class="output-line" style="color: var(--text-muted);">Click "Generate Proof" to simulate the full A2A flow...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deployed Contracts Section -->
+  <section class="contracts-section">
+    <h2>Deployed on Base Sepolia</h2>
+    <p class="subtitle">Verified smart contracts powering trustless agent commerce</p>
+    <div class="contracts-grid">
+      <div class="contract-card">
+        <div class="icon">🪪</div>
+        <h4>Identity Registry</h4>
+        <div class="address">0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f</div>
+        <a href="https://sepolia.basescan.org/address/0x9A27Efa5B8Da14D336317f2c1b8827654a5c384f" target="_blank">
+          View on BaseScan →
+        </a>
+      </div>
+      <div class="contract-card">
+        <div class="icon">⭐</div>
+        <h4>Reputation Registry</h4>
+        <div class="address">0xaEf4e79A1f51F48b5E5206cBCc32fFe6549edd7E</div>
+        <a href="https://sepolia.basescan.org/address/0xaEf4e79A1f51F48b5E5206cBCc32fFe6549edd7E" target="_blank">
+          View on BaseScan →
+        </a>
+      </div>
+      <div class="contract-card">
+        <div class="icon">🔐</div>
+        <h4>Validation Registry</h4>
+        <div class="address">0x15957085f167f181B55Dc2cae3eE019D427C9778</div>
+        <a href="https://sepolia.basescan.org/address/0x15957085f167f181B55Dc2cae3eE019D427C9778" target="_blank">
+          View on BaseScan →
+        </a>
+      </div>
+      <div class="contract-card">
+        <div class="icon">🌳</div>
+        <h4>Memory Registry</h4>
+        <div class="address">0x525D0c8908939303CD7ebEEf5A350EC5b6764451</div>
+        <a href="https://sepolia.basescan.org/address/0x525D0c8908939303CD7ebEEf5A350EC5b6764451" target="_blank">
+          View on BaseScan →
+        </a>
+      </div>
+    </div>
+  </section>
+
   <footer>
     <div class="footer-links">
       <a href="https://github.com/hshadab/coinbase">GitHub</a>
@@ -1473,6 +2186,90 @@
     setTimeout(() => {
       runDemo();
     }, 2000);
+
+    // ==========================================
+    // Try It Now - Interactive Simulation
+    // ==========================================
+    let simulationRunning = false;
+    let timerInterval = null;
+    let startTime = 0;
+
+    function updateTimer() {
+      const elapsed = (Date.now() - startTime) / 1000;
+      document.getElementById('outputTimer').textContent = elapsed.toFixed(2) + 's';
+    }
+
+    async function runSimulation() {
+      if (simulationRunning) return;
+      simulationRunning = true;
+
+      const btn = document.getElementById('tryBtn');
+      const output = document.getElementById('outputContent');
+      const input = document.getElementById('tryInput').value || 'ETH sentiment analysis';
+
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      output.innerHTML = '';
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 50);
+
+      // Generate deterministic hashes from input
+      const inputHash = '0x' + await sha256(input);
+      const modelHash = '0x' + await sha256('sentiment-v2.onnx');
+      const outputHash = '0x' + await sha256(input + ':bullish:0.87');
+      const proofHash = '0x' + await sha256(inputHash + modelHash + outputHash);
+      const merkleRoot = '0x' + await sha256('merkle:' + proofHash);
+      const attestationHash = '0x' + await sha256('attestation:' + proofHash);
+
+      const steps = [
+        { delay: 200, text: `<span class="spinner"></span> Searching Kinic for "${input}"...`, pending: true },
+        { delay: 600, text: `✓ Found 3 providers matching query`, success: true },
+        { delay: 300, text: `<span class="spinner"></span> Verifying Agent #2156 via ERC-8004...`, pending: true },
+        { delay: 500, text: `✓ Identity verified: Trust score 97/100`, success: true },
+        { delay: 200, text: `<span class="spinner"></span> Initiating x402 payment (1.00 USDC)...`, pending: true },
+        { delay: 400, text: `✓ Payment authorized via EIP-3009`, success: true },
+        { delay: 300, text: `<span class="spinner"></span> Running inference in Jolt Atlas zkVM...`, pending: true },
+        { delay: 2400, text: `✓ Inference complete: { sentiment: "bullish", confidence: 0.87 }`, success: true },
+        { delay: 200, text: `<span class="spinner"></span> Generating SNARK proof...`, pending: true },
+        { delay: 800, text: `✓ Proof generated (${(Math.random() * 0.5 + 2.2).toFixed(2)}s)`, success: true },
+        { delay: 100, text: `&nbsp;&nbsp;Model: <span style="color: var(--coinbase-blue)">${modelHash.slice(0, 18)}...</span>`, info: true },
+        { delay: 100, text: `&nbsp;&nbsp;Input: <span style="color: var(--coinbase-blue)">${inputHash.slice(0, 18)}...</span>`, info: true },
+        { delay: 100, text: `&nbsp;&nbsp;Output: <span style="color: var(--coinbase-blue)">${outputHash.slice(0, 18)}...</span>`, info: true },
+        { delay: 100, text: `&nbsp;&nbsp;Proof: <span style="color: var(--success-green)">${proofHash.slice(0, 18)}...</span>`, info: true },
+        { delay: 300, text: `<span class="spinner"></span> Posting attestation to Base Sepolia...`, pending: true },
+        { delay: 600, text: `✓ Attestation: <a href="https://sepolia.basescan.org/address/0x15957085f167f181B55Dc2cae3eE019D427C9778" target="_blank" style="color: var(--coinbase-blue)">${attestationHash.slice(0, 18)}...</a>`, success: true },
+        { delay: 200, text: `<span class="spinner"></span> Updating Merkle commitment...`, pending: true },
+        { delay: 400, text: `✓ New root: <span style="color: var(--success-green)">${merkleRoot.slice(0, 18)}...</span>`, success: true },
+        { delay: 200, text: `<span class="spinner"></span> Storing interaction in Kinic...`, pending: true },
+        { delay: 300, text: `✓ Memory indexed for future discovery`, success: true },
+        { delay: 400, text: ``, divider: true },
+        { delay: 100, text: `<strong style="color: var(--success-green);">✓ Transaction Complete!</strong> Verifiable A2A commerce in ${((Date.now() - startTime) / 1000).toFixed(2)}s`, final: true },
+      ];
+
+      for (const step of steps) {
+        await new Promise(r => setTimeout(r, step.delay));
+        if (step.divider) {
+          output.innerHTML += `<div style="border-top: 1px solid var(--glass-border); margin: 12px 0;"></div>`;
+        } else {
+          const className = step.success ? 'success' : step.pending ? 'pending' : step.final ? 'success' : '';
+          output.innerHTML += `<div class="output-line ${className}">${step.text}</div>`;
+        }
+        output.scrollTop = output.scrollHeight;
+      }
+
+      clearInterval(timerInterval);
+      btn.disabled = false;
+      btn.textContent = 'Generate Proof';
+      simulationRunning = false;
+    }
+
+    // Simple SHA256 for browser
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 40);
+    }
   </script>
 </body>
 </html>
