@@ -11,6 +11,7 @@
  */
 
 import { ethers, Contract, Signer, Log, EventLog } from "ethers";
+import { getProverServiceUrl } from "../config.js";
 
 // ============================================================================
 // Types
@@ -178,7 +179,7 @@ export class AgentPaymentRails {
 
   constructor(signer: Signer, config: ERC8004Config) {
     this.signer = signer;
-    this.proverServiceUrl = config.proverServiceUrl || "http://localhost:3001";
+    this.proverServiceUrl = config.proverServiceUrl || getProverServiceUrl();
 
     // Initialize ERC-8004 registries
     this.identityRegistry = new Contract(

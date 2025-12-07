@@ -9,13 +9,14 @@
  */
 
 import type { FeatureVector, PolicyDecision } from '../core/types.js';
-import { createHash, randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import {
   ProverServiceClient,
   getProverServiceClient,
   isProverServiceAvailable,
   type PublicInputs,
 } from './prover-client.js';
+import { DEFAULT_TIMEOUT_MS } from '../config.js';
 
 /**
  * Proof generation result
@@ -92,7 +93,7 @@ export class ProofGenerator {
     this.config = {
       mode: config.mode ?? 'auto',
       proverEndpoint: config.proverEndpoint ?? process.env.TRUSTLESS_PROVER_URL,
-      timeout: config.timeout ?? 30000,
+      timeout: config.timeout ?? DEFAULT_TIMEOUT_MS,
       ...config,
     };
 
@@ -122,10 +123,8 @@ export class ProofGenerator {
     try {
       await this.proverClient.healthCheck();
       this.serviceAvailable = true;
-      console.log('[JoltAtlas] Prover service connected');
     } catch {
       this.serviceAvailable = false;
-      console.warn('[JoltAtlas] Prover service not available, using mock mode');
     }
 
     return this.serviceAvailable;
@@ -208,11 +207,8 @@ export class ProofGenerator {
         isMock: false,
       };
     } catch (error) {
-      console.error('[JoltAtlas] Real proof generation failed:', error);
-
       // If in auto mode, fall back to mock
       if (this.config.mode === 'auto') {
-        console.warn('[JoltAtlas] Falling back to mock proof');
         return this.generateMockProof(modelCommitment, inputHash, outputHash, startTime);
       }
 
