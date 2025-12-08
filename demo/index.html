@@ -2439,7 +2439,7 @@
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px;">
                     <div>
                       <div style="font-size: 9px; color: var(--warning-orange); margin-bottom: 2px;">zkML Proof Attestation:</div>
-                      <a href="https://sepolia.basescan.org/address/0xc4e7c6304f0ab160620d6b7f42d0cadf576b0d81" target="_blank" style="font-size: 10px; color: var(--coinbase-blue);">ValidationRegistry →</a>
+                      <a href="https://sepolia.basescan.org/address/0xf1C6ddB3E2b5F54B7fE8960a42fac64348Ae35Ab" target="_blank" style="font-size: 10px; color: var(--coinbase-blue);">ValidationRegistry →</a>
                       <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="step6-tx">
                         <a href="#" id="step6-tx-link" target="_blank" style="color: var(--coinbase-blue);">Pending...</a>
                       </div>
@@ -2447,10 +2447,16 @@
                     <div>
                       <div style="font-size: 9px; color: var(--success-green); margin-bottom: 2px;">AI Memory Storage:</div>
                       <a href="https://dashboard.internetcomputer.org/canister/3tq5l-3iaaa-aaaak-apgva-cai" target="_blank" style="font-size: 10px; color: var(--success-green);">Kinic Canister →</a>
-                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
-                        Root: <span id="step6-merkle" style="font-family: 'JetBrains Mono', monospace; color: var(--success-green);">0x3f2a...8b1c</span>
+                      <div style="margin-top: 4px;"><a href="https://sepolia.basescan.org/address/0x0F0E176AF06acc8A058520B33EaAF7A848f83D1b" target="_blank" style="font-size: 10px; color: var(--coinbase-blue);">MemoryRegistry (Base) →</a></div>
+                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="step6-memory-tx">
+                        <a href="#" id="step6-memory-tx-link" target="_blank" style="color: var(--success-green);">Pending...</a>
                       </div>
                     </div>
+                  </div>
+                  <div style="margin-top: 8px; padding: 8px; background: rgba(0,214,50,0.08); border-radius: 6px; border: 1px solid rgba(0,214,50,0.2);">
+                    <div style="font-size: 9px; color: var(--success-green); margin-bottom: 4px; font-weight: 500;">Merkle Root (on-chain commitment):</div>
+                    <code id="step6-merkle" style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--success-green); word-break: break-all; display: block;">0x0000000000000000000000000000000000000000000000000000000000000000</code>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -2510,8 +2516,8 @@
             <span style="font-size: 10px; color: var(--coinbase-blue); background: rgba(0,82,255,0.1); padding: 2px 6px; border-radius: 4px;">Base</span>
           </div>
           <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">Stores zkML proof attestations on-chain</div>
-          <code style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">0xc4e7c6304f0ab160620d6b7f42d0cadf576b0d81</code>
-          <a href="https://sepolia.basescan.org/address/0xc4e7c6304f0ab160620d6b7f42d0cadf576b0d81#code" target="_blank" style="color: var(--coinbase-blue); font-size: 11px;">View on BaseScan →</a>
+          <code style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">0xf1C6ddB3E2b5F54B7fE8960a42fac64348Ae35Ab</code>
+          <a href="https://sepolia.basescan.org/address/0xf1C6ddB3E2b5F54B7fE8960a42fac64348Ae35Ab#code" target="_blank" style="color: var(--coinbase-blue); font-size: 11px;">View on BaseScan →</a>
         </div>
 
         <!-- Identity Registry -->
@@ -2586,8 +2592,8 @@
             <span style="font-size: 10px; color: var(--coinbase-blue); background: rgba(0,82,255,0.1); padding: 2px 6px; border-radius: 4px;">Base</span>
           </div>
           <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">Merkle root commitments for memory integrity</div>
-          <code style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">0x433bdba4717e7cb74551a4fcb47e2459670c2e1b</code>
-          <a href="https://sepolia.basescan.org/address/0x433bdba4717e7cb74551a4fcb47e2459670c2e1b#code" target="_blank" style="color: var(--coinbase-blue); font-size: 11px;">View on BaseScan →</a>
+          <code style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">0x0F0E176AF06acc8A058520B33EaAF7A848f83D1b</code>
+          <a href="https://sepolia.basescan.org/address/0x0F0E176AF06acc8A058520B33EaAF7A848f83D1b#code" target="_blank" style="color: var(--coinbase-blue); font-size: 11px;">View on BaseScan →</a>
         </div>
 
         <!-- Live Memory Feed -->
@@ -2618,7 +2624,7 @@
           <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">
             Data stored in Kinic • Root committed to Base
           </div>
-          <a href="https://sepolia.basescan.org/address/0x433bdba4717e7cb74551a4fcb47e2459670c2e1b" target="_blank" style="color: var(--coinbase-blue); font-size: 11px; display: inline-block; margin-top: 8px;">View Memory Registry on BaseScan →</a>
+          <a href="https://sepolia.basescan.org/address/0x0F0E176AF06acc8A058520B33EaAF7A848f83D1b" target="_blank" style="color: var(--coinbase-blue); font-size: 11px; display: inline-block; margin-top: 8px;">View Memory Registry on BaseScan →</a>
         </div>
       </div>
     </div>
@@ -2913,11 +2919,11 @@
 
     // Deployed contract addresses (Base Sepolia) - from forge broadcast
     const CONTRACTS = {
-      memoryRegistry: '0x433bdBa4717e7CB74551A4FCB47E2459670c2e1B',
+      memoryRegistry: '0x0F0E176AF06acc8A058520B33EaAF7A848f83D1b',
       identityRegistry: '0x406c7d97B0fdde58C078496fC153d0af9E972753',
       reputationRegistry: '0x94B536f4419F1B2704835d75cc5941E16cea06bD',
       attestationRegistry: '0x95B605dB1cdF6c9a1AF7E0db8c127b83d514858e',
-      validationRegistry: '0xc4e7c6304f0ab160620d6b7f42d0cadf576b0d81',
+      validationRegistry: '0xf1C6ddB3E2b5F54B7fE8960a42fac64348Ae35Ab',
       agentEscrow: '0x8fcaf0ac3e0a75d3e3f04c9035fff51dfed56a6c',
       chainId: 84532
     };
@@ -3546,10 +3552,64 @@
       }
     }
 
+    // Post memory attestation to MemoryRegistry on Base
+    async function postMemoryAttestation(merkleRoot, agentId = 1) {
+      const abi = [
+        'function postMemoryAttestation(uint256 agentId, uint8 operation, bytes32 contentHash, bytes32 embeddingHash, bytes32 zkProof, bytes32 newRoot) returns (bytes32)'
+      ];
+
+      try {
+        const memoryRegistry = new ethers.Contract(
+          CONTRACTS.memoryRegistry,
+          abi,
+          agentWallets.seller
+        );
+
+        // Ensure merkle root is properly formatted as bytes32
+        const stripHex = (s) => s && s.startsWith('0x') ? s.slice(2) : (s || '0');
+        const rootBytes32 = '0x' + stripHex(merkleRoot).padStart(64, '0').slice(0, 64);
+
+        // Content hash from the demo output
+        const contentHash = ethers.keccak256(ethers.toUtf8Bytes('demo-ai-output'));
+        const embeddingHash = ethers.keccak256(ethers.toUtf8Bytes('embedding-vector'));
+        const zkProof = ethers.keccak256(ethers.toUtf8Bytes('memory-zkproof'));
+
+        // Operation type: 0 = Insert (from MemoryRegistry enum)
+        const operation = 0;
+
+        console.log('Posting memory attestation to MemoryRegistry...');
+        const tx = await memoryRegistry.postMemoryAttestation(
+          agentId,
+          operation,
+          contentHash,
+          embeddingHash,
+          zkProof,
+          rootBytes32
+        );
+
+        console.log('Memory attestation tx submitted:', tx.hash);
+        const receipt = await tx.wait();
+        console.log('Memory attestation confirmed in block:', receipt.blockNumber);
+
+        return {
+          success: true,
+          txHash: tx.hash,
+          blockNumber: receipt.blockNumber
+        };
+      } catch (e) {
+        console.error('Memory attestation posting failed:', e.message);
+        return {
+          success: false,
+          error: e.message
+        };
+      }
+    }
+
     // Store transaction results for display
     let demoTransactions = {
       x402Transfer: null,
-      attestation: null
+      attestation: null,
+      memoryAttestation: null
     };
 
     // Format x402 payment for display
@@ -4541,7 +4601,7 @@ const { estimatedPrice, confidence, rarityRank, zkProof } = await valuation.json
           const currentMerkleRoot = kinicMerkleRoot || merkleTree.getRoot();
           const step6MerkleEl = document.getElementById('step6-merkle');
           if (currentMerkleRoot && step6MerkleEl) {
-            step6MerkleEl.textContent = `0x${currentMerkleRoot.substring(0, 8)}...${currentMerkleRoot.slice(-4)}`;
+            step6MerkleEl.textContent = currentMerkleRoot.startsWith('0x') ? currentMerkleRoot : `0x${currentMerkleRoot}`;
           }
 
           // POST REAL ATTESTATION TO VALIDATIONREGISTRY ON-CHAIN
@@ -4571,11 +4631,38 @@ const { estimatedPrice, confidence, rarityRank, zkProof } = await valuation.json
             txLinkEl.href = `https://sepolia.basescan.org/address/${CONTRACTS.validationRegistry}#events`;
           }
 
+          // POST MEMORY ATTESTATION TO MEMORYREGISTRY ON-CHAIN
+          const memoryTxLinkEl = document.getElementById('step6-memory-tx-link');
+
+          if (currentMerkleRoot && memoryTxLinkEl) {
+            memoryTxLinkEl.textContent = 'Posting memory commit...';
+            memoryTxLinkEl.href = '#';
+
+            // Post memory attestation with Merkle root
+            demoTransactions.memoryAttestation = await postMemoryAttestation(currentMerkleRoot, 1);
+
+            if (demoTransactions.memoryAttestation.success) {
+              memoryTxLinkEl.textContent = `Tx: ${demoTransactions.memoryAttestation.txHash.substring(0, 10)}... ✓`;
+              memoryTxLinkEl.href = `https://sepolia.basescan.org/tx/${demoTransactions.memoryAttestation.txHash}`;
+              console.log('✓ Memory attestation posted:', demoTransactions.memoryAttestation.txHash);
+            } else {
+              // Memory attestation failed - show link to contract
+              memoryTxLinkEl.textContent = 'View MemoryRegistry →';
+              memoryTxLinkEl.href = `https://sepolia.basescan.org/address/${CONTRACTS.memoryRegistry}#events`;
+              console.log('Memory attestation skipped:', demoTransactions.memoryAttestation.error);
+            }
+          } else if (memoryTxLinkEl) {
+            // No merkle root - just show contract link
+            memoryTxLinkEl.textContent = 'View MemoryRegistry →';
+            memoryTxLinkEl.href = `https://sepolia.basescan.org/address/${CONTRACTS.memoryRegistry}#events`;
+          }
+
           // Show final summary
-          if (demoTransactions.x402Transfer?.success || demoTransactions.attestation?.success) {
+          if (demoTransactions.x402Transfer?.success || demoTransactions.attestation?.success || demoTransactions.memoryAttestation?.success) {
             console.log('🎉 Demo completed with real on-chain transactions!');
             console.log('  x402 Transfer:', demoTransactions.x402Transfer?.txHash || 'skipped');
-            console.log('  Attestation:', demoTransactions.attestation?.txHash || 'skipped');
+            console.log('  zkML Attestation:', demoTransactions.attestation?.txHash || 'skipped');
+            console.log('  Memory Attestation:', demoTransactions.memoryAttestation?.txHash || 'skipped');
           }
         }
       ];

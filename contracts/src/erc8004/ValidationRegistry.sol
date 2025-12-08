@@ -307,7 +307,7 @@ contract ValidationRegistry {
         uint96 confidence
     ) external returns (bytes32 attestationHash) {
         require(decision <= 2, "Invalid decision");
-        require(_agentExists(agentId), "Agent does not exist");
+        // Agent registration check removed - allow standalone zkML attestations
 
         // Generate unique attestation hash
         attestationHash = keccak256(

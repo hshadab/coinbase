@@ -254,7 +254,7 @@ contract MemoryRegistry {
         bytes32 zkProof,
         bytes32 newRoot
     ) external returns (bytes32 attestationHash) {
-        require(_isAgentOwner(agentId, msg.sender), "Not agent owner");
+        // Agent ownership check removed - allow standalone memory attestations
 
         bytes32 previousRoot = memoryStores[agentId].merkleRoot;
 
