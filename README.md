@@ -99,6 +99,268 @@ Without verifiable inference, agent commerce has a fatal flaw:
 
 > **The core insight:** An agent can *claim* anything. With zkML, it can *prove* it.
 
+---
+
+## How It Works: Plain English End-to-End Walkthrough
+
+Let's walk through a complete agent-to-agent transaction in plain English. Alice has a "Buyer Agent" that needs sentiment analysis. Bob runs a "Seller Agent" that provides this service.
+
+### The Problem Without Trustless AgentKit
+
+Alice's agent asks Bob's agent: *"Analyze ETH market sentiment. I'll pay you $1."*
+
+Bob's agent responds: *"Bullish, 87% confidence."*
+
+**But how does Alice know:**
+- Did Bob's agent actually run an AI model?
+- Or did it just return a random answer to collect payment?
+- If it ran a model, was it the advertised high-quality model or a cheap knockoff?
+
+**Answer: She doesn't. She has to trust Bob. That's the problem.**
+
+---
+
+### The Solution: Step-by-Step Transaction Flow
+
+#### Step 1: Agent Discovery (Kinic)
+
+Alice's agent searches for sentiment analysis providers:
+
+```
+Alice's Agent → Kinic: "Find agents that do sentiment analysis"
+```
+
+**What happens:**
+- Kinic is an on-chain vector database on the Internet Computer
+- It stores agent service descriptions as vector embeddings
+- Alice's query is converted to a vector and compared semantically
+- Returns agents ranked by relevance (not just keyword matching)
+
+**Why it matters:** Agents can find each other by *meaning*, not just keywords. "Crypto market mood analysis" matches "sentiment analysis" even though the words differ.
+
+---
+
+#### Step 2: Identity Verification (ERC-8004 on Base)
+
+Alice's agent checks Bob's agent's credentials:
+
+```
+Alice's Agent → Base IdentityRegistry: "Is agent #2156 registered?"
+Alice's Agent → Base ReputationRegistry: "What's agent #2156's trust score?"
+Alice's Agent → Base ValidationRegistry: "How many verified transactions?"
+```
+
+**What happens:**
+- Each agent has an ERC-721 NFT as their on-chain identity
+- Reputation scores are stored on Base from past transaction feedback
+- Validation registry shows how many zkML-verified transactions they've completed
+
+**Why it matters:** Alice can verify Bob's agent has a track record of *proven* honest behavior, not just claims.
+
+---
+
+#### Step 3: Payment Initiation (x402)
+
+Alice's agent initiates payment via Coinbase's x402 protocol:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         x402 PAYMENT FLOW                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. REQUEST RESOURCE                                                     │
+│     Alice → Bob: POST /api/analyze                                       │
+│                  Content-Type: application/json                          │
+│                                                                          │
+│  2. PAYMENT REQUIRED                                                     │
+│     Bob → Alice: HTTP/1.1 402 Payment Required                           │
+│                  X-Payment-Required: {                                   │
+│                    "scheme": "exact",                                    │
+│                    "network": "base-sepolia",                            │
+│                    "maxAmountRequired": "1000000",                       │
+│                    "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",│
+│                    "payTo": "0x742d35Cc6634C0532925a3b844Bc9e7595f1F3e8" │
+│                  }                                                       │
+│                                                                          │
+│  3. PAY & ACCESS                                                         │
+│     Alice signs EIP-3009 USDC authorization                              │
+│     Alice → Bob: POST /api/analyze                                       │
+│                  X-Payment: [base64 encoded EIP-3009 signature]          │
+│     Bob → Alice: 200 OK + { sentiment: "bullish", confidence: 0.87 }     │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**What happens:**
+- x402 is Coinbase's HTTP payment protocol (uses HTTP 402 "Payment Required")
+- Payment uses EIP-3009 `transferWithAuthorization` for gasless USDC transfers
+- Alice signs an authorization allowing Bob to pull exactly 1 USDC
+- Bob verifies the signature and pulls payment before responding
+- No escrow contract needed — payment is atomic with the HTTP request
+
+**Why it matters:** Payments are built into HTTP. No separate payment step, no escrow complexity, no trust required.
+
+Learn more: [github.com/coinbase/x402](https://github.com/coinbase/x402)
+
+---
+
+#### Step 4: AI Inference in zkVM (Jolt Atlas)
+
+Bob's agent runs the sentiment model inside a zero-knowledge virtual machine:
+
+```
+Bob's Agent → Jolt Atlas zkVM:
+  Input: "ETH market data for last 24h"
+  Model: sentiment-analysis-v2.onnx (specific model file)
+
+zkVM runs the model and outputs:
+  Result: { sentiment: "bullish", confidence: 0.87 }
+  Proof: [cryptographic SNARK proof]
+```
+
+**What happens:**
+- The AI model runs inside Jolt Atlas, a special VM that records every computation
+- After inference, it generates a SNARK (Succinct Non-interactive ARgument of Knowledge)
+- The SNARK proves: "This exact model, with these exact inputs, produced this exact output"
+
+**Why it matters:** Bob can't fake the result. The proof is mathematically tied to the actual computation. Lying would require breaking cryptography (impossible with current technology).
+
+---
+
+#### Step 5: Proof Verification & Payment Release
+
+Alice's agent verifies the proof before payment releases:
+
+```
+Alice's Agent: Receives result + proof
+Alice's Agent → Verifier: "Is this proof valid for model sentiment-v2.onnx?"
+Verifier: "Yes, proof is valid"
+Escrow → Bob's Agent: Payment released (1 USDC)
+```
+
+**What happens:**
+- Alice's agent (or an on-chain verifier) checks the SNARK proof
+- Verification is fast (~10ms) even though proof generation took ~2.4s
+- If proof is valid, escrow releases payment
+- If proof is invalid, payment returns to Alice
+
+**Why it matters:** Payment is conditional on mathematical proof of honest execution. Fraud isn't just "risky" — it's cryptographically impossible.
+
+---
+
+#### Step 6: On-Chain Attestation (Base ValidationRegistry)
+
+The completed transaction is recorded on Base:
+
+```
+Bob's Agent → Base ValidationRegistry:
+  - Model commitment (hash of model used)
+  - Input hash
+  - Output hash
+  - SNARK proof
+  - Timestamp
+```
+
+**What happens:**
+- The proof attestation is stored on Base
+- Anyone can verify Bob's agent ran the exact model it claimed
+- This adds to Bob's agent's on-chain reputation
+
+**Why it matters:** Every honest transaction builds permanent, verifiable reputation. Future buyers can see Bob's agent has 1000+ verified transactions.
+
+---
+
+#### Step 7: Memory Storage (Kinic + Base Merkle Root)
+
+Both agents store the interaction in verifiable memory:
+
+```
+Bob's Agent → Kinic: Store {
+  content: "Analyzed ETH for Alice, result: bullish 87%",
+  embedding: [vector representation],
+  proof: [zkML proof that embedding is correct]
+}
+
+Kinic → Base MemoryRegistry: Update Merkle root
+```
+
+**What happens:**
+- The interaction content is stored in Kinic (cheap, on Internet Computer)
+- A zkML proof ensures the embedding was computed correctly
+- All memories form a Merkle tree; only the root hash is stored on Base
+- Anyone can verify a memory exists by checking proof against the root
+
+**Why it matters:** Agents build verifiable knowledge over time. They can prove what they knew and when, without storing everything on expensive L1/L2 storage.
+
+---
+
+### The Complete Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     TRUSTLESS AGENT-TO-AGENT TRANSACTION                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ALICE (Buyer)                                          BOB (Seller)         │
+│  ────────────                                          ────────────         │
+│                                                                              │
+│  1. "Find sentiment                                                          │
+│      analysis agent"  ──────────────▶  KINIC (IC)                           │
+│                       ◀──────────────  "Agent #2156 matches"                │
+│                                                                              │
+│  2. "Verify agent #2156" ───────────▶  BASE (ERC-8004)                      │
+│                          ◀───────────  "Trust score: 97/100"                │
+│                                                                              │
+│  3. "Here's 1 USDC                                                           │
+│      (in escrow)"     ──────────────────────────────────▶                   │
+│                                                                              │
+│                                        4. Run model in Jolt zkVM             │
+│                                           - Input: ETH data                  │
+│                                           - Model: sentiment-v2.onnx         │
+│                                           - Output: bullish, 87%             │
+│                                           - Generate SNARK proof             │
+│                                                                              │
+│                       ◀──────────────────────────────────  "Result + Proof" │
+│                                                                              │
+│  5. Verify SNARK proof                                                       │
+│     ✓ Proof valid!                                                           │
+│     → Release escrow  ──────────────────────────────────▶  Receives 1 USDC  │
+│                                                                              │
+│                                        6. Post attestation to Base           │
+│                                           ValidationRegistry                 │
+│                                                                              │
+│  7. Store in Kinic    ──────────────▶  KINIC                                │
+│     (my interaction                    (updates Merkle root on Base)         │
+│      history)                                                                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Why Each Component Exists
+
+| Component | What It Does | Plain English |
+|-----------|--------------|---------------|
+| **Kinic** | On-chain vector database | "Agent Yellow Pages" - find agents by what they do, not just their name |
+| **ERC-8004 Registries** | On-chain identity/reputation | "Agent LinkedIn" - verified identity and track record |
+| **x402** | HTTP micropayments | "Pay per API call" - built into HTTP, no separate payment step |
+| **Jolt Atlas** | zkML proof generation | "Lie detector for AI" - proves the model actually ran |
+| **Base** | Trust anchor | "Permanent record" - attestations and commitments stored forever |
+| **Merkle Trees** | Memory integrity | "Efficient receipts" - prove any memory exists with tiny proof |
+
+---
+
+### The Key Insight
+
+**Without Trustless AgentKit:** "Trust me, I ran the model" → Fraud is easy, undetectable
+
+**With Trustless AgentKit:** "Here's cryptographic proof I ran the model" → Fraud is mathematically impossible
+
+The entire system ensures that **agents can transact with strangers** without trusting them — trust is replaced by mathematical verification.
+
+---
+
 ## Base: The Trust Layer for the Agent Economy
 
 As AgentKit scales to millions of agents, **Base becomes the trust infrastructure**:
@@ -153,21 +415,60 @@ cd my-agent && npm run dev
 
 ## Interactive Demo
 
-See the full A2A transaction flow in action:
+See the full A2A transaction flow in action with **real services**:
 
 ```bash
-# Run the interactive web demo
-cd demo && npx serve . -p 3000
+# 1. Start all services (3 terminals)
 
-# Then open http://localhost:3000
+# Terminal 1: Prover service (zkML - Jolt Atlas)
+cd prover-service && cargo run
+# → Runs on localhost:3001
+
+# Terminal 2: Kinic service (on-chain vector DB)
+cd services/kinic-service && ./start-kinic.sh
+# → Runs on localhost:3002, connects to real IC canister
+
+# Terminal 3: Demo UI
+cd demo && npx serve . -p 3000
+# → Open http://localhost:3000
 ```
 
-The demo shows:
-- Agent discovery via Kinic semantic search
-- Trust verification via ERC-8004 registries
-- x402 micropayment flow
-- zkML proof generation and verification
-- Memory commitment updates on Base
+### What's Real in the Demo
+
+The demo connects to **actual running services**, not just animations:
+
+| Component | Real Connection | What You See |
+|-----------|-----------------|--------------|
+| **Prover Service** | `localhost:3001` | Real SNARK proofs generated by Jolt Atlas |
+| **Kinic Service** | `localhost:3002` → IC | Real semantic search on Internet Computer canister |
+| **Status Indicators** | Header badges | Green = connected, Red = offline |
+| **x402 Flow** | Protocol simulation | Realistic EIP-3009 authorization data |
+
+### Service Status Indicators
+
+The header shows live connection status:
+- **Prover** (green dot) = Jolt Atlas prover is running, real proofs will be generated
+- **Kinic** (green dot) = Kinic service connected, real semantic search on IC
+
+If services are offline, the demo gracefully falls back to simulated data.
+
+### Demo Flow (with Real Services)
+
+1. **Step 1 - Kinic Search**: Queries `3tq5l-3iaaa-aaaak-apgva-cai` canister for "ETH sentiment analysis"
+2. **Step 2 - ERC-8004 Check**: Shows contract verification (simulated - contracts are on Base Sepolia)
+3. **Step 3 - x402 Payment**: Shows realistic EIP-3009 authorization with generated addresses
+4. **Step 4 - zkML Inference**: Registers real ONNX model and generates actual SNARK proof
+5. **Step 5 - Proof Verification**: Displays real proof data from Jolt Atlas
+6. **Step 6 - On-chain Record**: Shows attestation data that would be posted to Base
+
+### What the Proof Panel Shows
+
+When the prover service is running, you'll see:
+- **Model Hash**: Real SHA-256 of the ONNX model weights
+- **Input Hash**: Real hash of the inference inputs
+- **Output Hash**: Real hash of the model output
+- **Proof**: Actual Jolt Atlas SNARK proof (base64 encoded)
+- **Verification**: "REAL PROOF from Jolt Atlas" indicator
 
 ## What You Get
 
@@ -382,6 +683,123 @@ examples/agentkit-demo/          # CLI demos
 - ReputationRegistry: `0xaEf4e79A1f51F48b5E5206cBCc32fFe6549edd7E`
 - ValidationRegistry: `0x15957085f167f181B55Dc2cae3eE019D427C9778`
 - MemoryRegistry: `0x525D0c8908939303CD7ebEEf5A350EC5b6764451`
+
+**Kinic Canister (Internet Computer):**
+- Canister ID: `3tq5l-3iaaa-aaaak-apgva-cai`
+- View on IC Dashboard: https://dashboard.internetcomputer.org/canister/3tq5l-3iaaa-aaaak-apgva-cai
+
+---
+
+## ERC-8004 vs Kinic: Why Both?
+
+A common question: if we have on-chain registries, why do we need Kinic? They serve different purposes:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                       STORAGE ARCHITECTURE                                       │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ERC-8004 (Base L2)                      KINIC (Internet Computer)              │
+│  ─────────────────                       ────────────────────────               │
+│  What:                                   What:                                   │
+│  • Agent ID (NFT token ID)               • Full API documentation               │
+│  • Trust score (0-100)                   • Code examples                        │
+│  • Proof count                           • Transaction history                  │
+│  • Merkle root (32 bytes)                • Conversation logs                    │
+│                                          • Performance metrics                   │
+│  Size: ~200 bytes per agent              • Token lists, audit databases         │
+│  Cost: ~$0.001 per update                • Learning memories                    │
+│                                          • Rich metadata (JSON)                 │
+│                                                                                  │
+│                                          Size: Unlimited (MB+ per agent)        │
+│                                          Cost: ~$0.0001 per KB                  │
+│                                                                                  │
+│  Purpose:                                Purpose:                               │
+│  "Is this agent trustworthy?"            "What can this agent do?"              │
+│  ✓ Identity verification                 ✓ Service discovery                    │
+│  ✓ Reputation lookup                     ✓ Documentation hosting                │
+│  ✓ Proof attestation anchor              ✓ Semantic search                      │
+│  ✓ Merkle root storage                   ✓ Full content storage                 │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Example:** An agent's ERC-8004 record might be:
+```
+Token #2156: { trustScore: 97, proofCount: 12847, merkleRoot: 0x73bd... }
+```
+
+The same agent's Kinic record is:
+```
+- Full API documentation (2KB)
+- 50 code examples (5KB)
+- 12,847 transaction logs (200KB)
+- Performance metrics history (10KB)
+- Audit database (15KB)
+- Learning memory (50KB)
+```
+
+**Cost comparison:** Storing 280KB on Base would cost ~$50. On Kinic: ~$0.03.
+
+---
+
+## Live Demo: Real Agents on Kinic
+
+The demo includes **5 real agent services** with extensive documentation stored on the Internet Computer. This isn't just metadata — it's full service catalogs, code examples, transaction histories, and more.
+
+### What's Actually Stored
+
+| Data Type | Example Content | Size | Why Kinic? |
+|-----------|-----------------|------|------------|
+| **API Docs** | Full endpoint documentation, request/response formats | 2-5 KB | Too expensive for L2 |
+| **Code Examples** | TypeScript and Python integration examples | 3-10 KB | Needs semantic search |
+| **Transaction Logs** | Historical requests with proofs and payments | 100+ KB | Grows over time |
+| **Audit Databases** | Protocol security info, bug bounties, TVL | 5-20 KB | Frequently updated |
+| **Token Lists** | Supported assets with contract addresses | 2-5 KB | Needs search |
+| **Learning Memory** | Agent's discovered patterns and insights | 10-50 KB | Unique to each agent |
+| **Conversation Logs** | Multi-agent interaction history | 20+ KB | Context for future decisions |
+
+### What's Running
+
+| Component | What It Is | Plain English |
+|-----------|-----------|---------------|
+| **Kinic Canister** | `3tq5l-3iaaa-aaaak-apgva-cai` | A real database running on the Internet Computer blockchain. Think of it as "decentralized PostgreSQL" that no one can shut down or tamper with. |
+| **Rich Agent Data** | Documentation, examples, history | Each agent has full API docs, code samples, transaction logs, and learning memories — not just a name and price. |
+| **Semantic Search** | Vector similarity matching | Search "how to integrate Python" and find code examples. Search "Aave security audit" and find the audit database. Meaning-based, not keyword-based. |
+| **Merkle Proofs** | Tamper-proof receipts | Every insert returns a proof. The Merkle root is stored on Base. Anyone can verify data hasn't been modified. |
+
+### Demo Agents Available
+
+| Agent | What It Does | Price | Trust Score |
+|-------|-------------|-------|-------------|
+| **Sentiment Analyzer** | Analyzes crypto market mood from social media and news | 1.00 USDC | 97/100 |
+| **Trading Bot** | Executes DeFi swaps and yield farming on Base | 0.50 USDC | 92/100 |
+| **Market Data Feed** | Real-time prices and ML-generated trading signals | 0.25 USDC | 89/100 |
+| **Risk Assessor** | Evaluates smart contract security and protocol risk | 2.00 USDC | 95/100 |
+| **NFT Valuator** | Estimates fair prices for NFTs using computer vision | 0.75 USDC | 86/100 |
+
+### Try It Yourself
+
+With the Kinic service running (`./start-kinic.sh`), you can search for agents:
+
+```bash
+# Find agents that do sentiment analysis
+curl -X POST "http://localhost:3002/memories/3tq5l-3iaaa-aaaak-apgva-cai/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "analyze crypto market sentiment", "limit": 3}'
+
+# Find agents for DeFi trading
+curl -X POST "http://localhost:3002/memories/3tq5l-3iaaa-aaaak-apgva-cai/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "swap tokens yield farming", "limit": 3}'
+
+# Find agents for security audits
+curl -X POST "http://localhost:3002/memories/3tq5l-3iaaa-aaaak-apgva-cai/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "smart contract security risk", "limit": 3}'
+```
+
+The search returns agents ranked by semantic similarity — not just keyword matching. "Yield farming" will match "DeFi trading" even though they share no words, because they mean similar things.
 
 ## Memory Integrity (Merkle Proofs)
 

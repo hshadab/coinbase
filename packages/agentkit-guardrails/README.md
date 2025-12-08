@@ -1,12 +1,14 @@
-# @trustless-agentkit/sdk
+# @trustless-agentkit/guardrails
 
-> Make your AI agents trustless with verifiable compute and memory.
+> An [AgentKit Framework Extension](https://docs.cdp.coinbase.com/agent-kit/core-concepts/architecture-explained#2-framework-extensions) for cryptographic guardrails.
 
-[![npm version](https://img.shields.io/npm/v/@trustless-agentkit/sdk.svg)](https://www.npmjs.com/package/@trustless-agentkit/sdk)
-[![Built for AgentKit](https://img.shields.io/badge/Built%20for-AgentKit-0052FF.svg)](https://github.com/coinbase/agentkit)
+[![npm version](https://img.shields.io/npm/v/@trustless-agentkit/guardrails.svg)](https://www.npmjs.com/package/@trustless-agentkit/guardrails)
+[![AgentKit Extension](https://img.shields.io/badge/AgentKit-Framework%20Extension-0052FF.svg)](https://docs.cdp.coinbase.com/agent-kit/core-concepts/architecture-explained#2-framework-extensions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Trustless AgentKit extends [Coinbase AgentKit](https://docs.cdp.coinbase.com/agent-kit/welcome) with cryptographic guarantees:
+Just like [`agentkit-langchain`](https://docs.cdp.coinbase.com/agent-kit/) wraps AgentKit actions for LangChain, `agentkit-guardrails` wraps actions with cryptographic proofs.
+
+This [Framework Extension](https://docs.cdp.coinbase.com/agent-kit/core-concepts/architecture-explained#2-framework-extensions) adds two pillars of trust to [Coinbase AgentKit](https://docs.cdp.coinbase.com/agent-kit/welcome):
 
 - **Verifiable Inference**: zkML proofs that your agent ran its policy correctly ([Jolt Atlas](https://github.com/ICME-Lab/jolt-atlas))
 - **Verifiable Memory**: On-chain vector database with tamper-proof storage ([Kinic](https://github.com/ICME-Lab/kinic-cli))
@@ -14,7 +16,7 @@ Trustless AgentKit extends [Coinbase AgentKit](https://docs.cdp.coinbase.com/age
 ## Install
 
 ```bash
-npm install @trustless-agentkit/sdk
+npm install @trustless-agentkit/guardrails
 ```
 
 ## Quick Start (5 minutes)
@@ -22,7 +24,7 @@ npm install @trustless-agentkit/sdk
 ### 1. Wrap any action with zkML verification
 
 ```typescript
-import { withZkGuardrail } from '@trustless-agentkit/sdk';
+import { withZkGuardrail } from '@trustless-agentkit/guardrails';
 
 // Your existing AgentKit action
 const transferAction = agent.getAction('transfer');
@@ -47,7 +49,7 @@ console.log(result.guardrail.proof);    // '0x...' zkML SNARK proof
 ### 2. Add verifiable memory
 
 ```typescript
-import { AgentMemory, StorageType } from '@trustless-agentkit/sdk';
+import { AgentMemory, StorageType } from '@trustless-agentkit/guardrails';
 
 const memory = new AgentMemory({
   stores: [{ type: StorageType.Kinic, config: { canisterId: '...' } }],
@@ -69,7 +71,7 @@ const results = await memory.search({
 ### 3. Full A2A marketplace
 
 ```typescript
-import { createMarketplace } from '@trustless-agentkit/sdk';
+import { createMarketplace } from '@trustless-agentkit/guardrails';
 
 const marketplace = createMarketplace(signer, {
   erc8004: {

@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0"
   }
 }
